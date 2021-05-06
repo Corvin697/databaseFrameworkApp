@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>AJAX-Beispiel</title>
+<script>
+function testekennwortqualitaet(inhalt)
+{
+ if (inhalt=="")
+ {
+  document.getElementById("sicherheitshinweis").innerHTML="keine Eingabe";
+  return;
+ }
+ if (window.XMLHttpRequest)
+ {
+  // AJAX nutzen mit IE7+, Chrome, Firefox, Safari, Opera
+  xmlhttp=new XMLHttpRequest();
+ }
+ else
+ {
+  // AJAX mit IE6, IE5
+  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+ }
+ xmlhttp.onreadystatechange=function()
+ {
+  if (xmlhttp.readyState==4 && xmlhttp.status==200)
+  {
+   document.getElementById("sicherheitshinweis").innerHTML=xmlhttp.responseText;
+  }
+ }
+ xmlhttp.open("GET","kennworttesten.php?q="+inhalt,true);
+ xmlhttp.send();
+}
+</script>
+
+</head>
+
+<body>
+
+<h1>Beispiel Kennwortsicherheit über AJAX</h1>
+
+<input type="text" size="10" value="" 
+onkeyup="testekennwortqualitaet(this.value)" >
+<span id="sicherheitshinweis">hier kommt dann der AJAX-Inhalt</span>
+
+</body>
+</html>
