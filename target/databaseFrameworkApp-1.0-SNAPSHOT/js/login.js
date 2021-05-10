@@ -15,8 +15,8 @@ document.addEventListener("DOMContentLoaded", () => {
             asyncRequest.addEventListener("readystatechange", () => {
                 if(asyncRequest.readyState == 4 && asyncRequest.status == 200)
                 {
-                    if (asyncRequest.responseText.toString() == "Login successfull!") {
-                        window.location.replace("localhost:8080/databaseFrameworkApp/dashboard.html")
+                    if (asyncRequest.responseText == "Login success!") {
+                        document.re
                     }
                 }
             })

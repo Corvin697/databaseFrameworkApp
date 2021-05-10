@@ -21,16 +21,9 @@ body {
     height: 100%;
 }
 
-h1 {
+h1, h3, h5 {
     font-size: 5rem;
     color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-h3 {
-    font-size: 5rem;
-    color: whitesmoke;
     display: flex;
     align-items: center;
     justify-content: center;
