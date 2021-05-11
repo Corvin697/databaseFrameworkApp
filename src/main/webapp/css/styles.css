@@ -7,10 +7,11 @@ html {
 }
 
 body {
-    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-family: 'Dosis', sans-serif;
-    height: 100%;
-    margin: 1%;
+
     background: linear-gradient(to left, #ff5e7c, #c272d4, #718ced, #02aab0, #00cdac);
 }
 
@@ -19,4 +20,5 @@ body {
     text-align: center;
 
 }
+
 
