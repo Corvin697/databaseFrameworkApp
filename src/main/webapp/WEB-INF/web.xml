@@ -6,7 +6,7 @@
     
     <servlet>
         <servlet-name>helloServlet</servlet-name>
-        <servlet-class>greta.dev.databaseFrameworkApp.HelloServlet</servlet-class>
+        <servlet-class>greta.dev.databaseFrameworkApp.old.HelloServlet</servlet-class>
     </servlet>
     <servlet-mapping>
         <servlet-name>helloServlet</servlet-name>

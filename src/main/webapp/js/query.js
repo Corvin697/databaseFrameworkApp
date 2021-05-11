@@ -5,7 +5,25 @@ document.addEventListener("DOMContentLoaded", () => {
             let submitButton = document.getElementById("query-submit-button")
             submitButton.addEventListener("click", (event) => {
                 event.preventDefault()
-                alert("Submit gedrückt!")
+                const fieldText = document.getElementById("query-text-input").value
+                try
+                {
+                    let asyncRequest = new XMLHttpRequest();
+                    asyncRequest.addEventListener("readystatechange", () => {
+                        if(asyncRequest.readyState == 4 && asyncRequest.status == 200)
+                        {
+                            const bodyElements = document.getElementById("body-elements")
+                            bodyElements.innerHTML = asyncRequest.responseText
+                        }
+                    })
+                    asyncRequest.open('POST', './QueryServlet', true);
+                    asyncRequest.send(fieldText)
+                }
+                catch(exception)
+                {
+                    alert("Something went wrong! \n Please check your credentials")
+                }
+
             })
         }})
 

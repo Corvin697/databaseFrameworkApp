@@ -1,10 +1,12 @@
-package greta.dev.databaseFrameworkApp;
+package greta.dev.databaseFrameworkApp.old;
 
 import com.mongodb.Mongo;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import greta.dev.databaseFrameworkApp.Impl.MySqlImpl;
 import greta.dev.databaseFrameworkApp.Impl.MongoDbImpl;
+import greta.dev.databaseFrameworkApp.MongoDb;
+import greta.dev.databaseFrameworkApp.MySql;
 import org.bson.Document;
 
 import java.sql.Connection;

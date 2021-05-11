@@ -10,6 +10,9 @@ body {
     font-family: 'Dosis', sans-serif;
     background: linear-gradient(to left, #ff5e7c, #c272d4, #718ced, #02aab0, #00cdac);
 }
+h1,h2,h3,h4,h5,h6 {
+    color: whitesmoke;
+}
 
 .navigation-bar {
     text-align: left;
@@ -41,4 +44,23 @@ body {
     justify-content: center;
     text-align: center;
     padding-top: 1%;
+}
+
+.formatted {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.document-table {
+    padding-top: 1%;
+    padding-left: 20%;
+    padding-right: 20%;
+}
+
+.sql-table {
+    padding-top: 1%;
+    padding-left: 20%;
+    padding-right: 20%;
 }
