@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
                             const databaseType = asyncRequest.responseText.split(",")[0]
                             switch(databaseType) {
                                 case "sql":
-                                    console.log("SQL")
+                                    writeSql(asyncRequest)
                             }
                         }
                     })
@@ -30,6 +30,28 @@ document.addEventListener("DOMContentLoaded", () => {
 
             })
         }})
+
+function writeSql (XMLHttpRequest) {
+    const responseText = XMLHttpRequest.responseText;
+    const splittedResponseText = responseText.split(",")
+    const columnCount = splittedResponseText [1]
+    const rowCount = splittedResponseText [splittedResponseText.length -1]
+    let newInnerHtml = '<div id="table-element" class="formatted sql-table"> \n' +
+        '<table class="table table-striped table-dark"> \n' +
+        '<thead> \n' + '<tr> \n' + '<th scope="col">#</th> \n';
+
+    for(let i = 1; i <= columnCount; i++) {
+        //Columnnames are starting at payload postion 3
+        let columnName = splittedResponseText[i+2]
+        newInnerHtml = newInnerHtml + '<th scope="col">' + columnName + '</th> \n'
+    }
+    newInnerHtml = newInnerHtml + '</tr> \n' + '</thead> \n' + '<tbody> \n'
+    for(let i = 1; i <= rowCount; i++) {
+        let rowData = splittedResponseText[i +3]
+        console.log(rowData)
+    }
+
+}
 
 
 
