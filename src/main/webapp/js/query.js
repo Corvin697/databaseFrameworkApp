@@ -14,7 +14,10 @@ document.addEventListener("DOMContentLoaded", () => {
                         {
                             const bodyElements = document.getElementById("body-elements")
                             const databaseType = asyncRequest.responseText.split(",")[0]
-                            console.log(databaseType)
+                            switch(databaseType) {
+                                case "sql":
+                                    console.log("SQL")
+                            }
                         }
                     })
                     asyncRequest.open('POST', './QueryServlet', true);

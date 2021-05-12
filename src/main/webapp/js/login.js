@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 if(asyncRequest.readyState == 4 && asyncRequest.status == 200)
                 {
                     if (asyncRequest.responseText == "Login success!") {
-                        document.re
                     }
                 }
             })
