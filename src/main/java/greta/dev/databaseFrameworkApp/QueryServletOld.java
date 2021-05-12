@@ -4,20 +4,19 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import greta.dev.databaseFrameworkApp.Impl.MongoDbImpl;
 import greta.dev.databaseFrameworkApp.Impl.MySqlImpl;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.annotation.WebServlet;
-import jakarta.servlet.http.HttpServlet;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
+import jakarta.servlet.annotation.*;
 import org.bson.Document;
 
+import javax.print.Doc;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
 import java.util.stream.Collectors;
 
 @WebServlet(name = "QueryServlet", value = "/QueryServlet")
-public class QueryServlet extends HttpServlet {
+public class QueryServletOld extends HttpServlet {
     MongoDb mongoDb;
     MongoDatabase mongoDatabase;
     MongoCollection mongoCollection;
@@ -81,43 +80,51 @@ public class QueryServlet extends HttpServlet {
         if(resultSet != null) {
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
             PrintWriter out = httpServletResponse.getWriter();
-            int columnType = -1;
-            int columnCount = resultSetMetaData.getColumnCount();
-
-            int rowCount = 0;
-            while(resultSet.next()) rowCount++;
-            Object [] [] responseTable = new Object[columnCount][rowCount];
-
-            for(int i = 1; i < columnCount +1;i++) {
-                responseTable[i] [0] = resultSetMetaData.getColumnName(i);
+            int columns = resultSetMetaData.getColumnCount();
+            int columnType = 0;
+            out.println("<div id=\"table-element\" class=\"formatted sql-table\">");
+            out.println("<table class=\"table table-striped table-dark\">");
+            out.println("<thead>");
+            out.println("<tr>");
+            out.println("<th scope=\"col\">#</th>");
+            for(int i = 1; i < columns +1;i++) {
+                String columnName = resultSetMetaData.getColumnName(i);
+                out.println("<th scope=\"col\">" + columnName + "</th>");
             }
-            /*
-            int i = 1;
-            int j = 1;
-            while (resultSet.next()) {
-                 i = 1; // start at column 1 in every new resultSet
-                 j++; // counter for array
+            out.println("</tr>");
+            out.println("</thead>");
+            out.println("<tbody>");
 
-                while (i < columnCount + 1) {
+            while (resultSet.next()) {
+                int i = 1;
+                out.println("<tr>");
+                out.println("<th scope=\"row\">" + (i -1) + "</th>");
+                while (i < columns + 1) {
                     // columnType switch-case to return the correct data type
                     columnType = resultSetMetaData.getColumnType(i);
                     switch (columnType) {
                         case 4:
-                            responseTable [j] [i] = resultSet.getInt(i);
+                            out.println("<td>" + resultSet.getInt(i) + "</td>");
                             break;
                         case 1:
-                            responseTable [j] [i] = resultSet.getString(i);
+                            out.println("<td>" + resultSet.getString(i) + "</td>");
                             break;
 
                         default:
-                            responseTable [j] [i] = resultSet.getString(i);
+                            out.println("<td>" + resultSet.getString(i) + "</td>");
                             break;
                     }
                     i++;
                 }
-            }*/
-            System.out.println(responseTable);
+                out.println("</tr>");
+            }
+            out.println("</tbody>");
+            out.println("</table>");
+            out.println("</div>");
+
         }
+
+
     }
 
 
