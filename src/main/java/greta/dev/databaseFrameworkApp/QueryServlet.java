@@ -14,6 +14,7 @@ import org.bson.Document;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
+import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @WebServlet(name = "QueryServlet", value = "/QueryServlet")
@@ -78,47 +79,49 @@ public class QueryServlet extends HttpServlet {
     }
 
     protected void writeSql(ResultSet resultSet, HttpServletResponse httpServletResponse) throws SQLException, IOException {
-        if(resultSet != null) {
+        //Response Payload: "sql, [columnCount], [rowCount], columnnames, rowData
+        if (resultSet != null) {
+            String payload = "sql";
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
             PrintWriter out = httpServletResponse.getWriter();
-            int columnType = -1;
-            int columnCount = resultSetMetaData.getColumnCount();
 
+            int columnCount = resultSetMetaData.getColumnCount();
             int rowCount = 0;
-            while(resultSet.next())  {
+
+            while (resultSet.next()) {
                 rowCount++;
             }
-            Object [] [] responseTable = new Object[columnCount][rowCount];
 
-            for(int i = 1; i < columnCount +1;i++) {
-                responseTable[i] [0] = resultSetMetaData.getColumnName(i);
+            payload = payload + ", " + columnCount + ", " + rowCount;
+
+            for (int i = 1; i < columnCount + 1; i++) {
+                payload = payload + ", " + resultSetMetaData.getColumnName(i);
             }
-            /*
-            int i = 1;
-            int j = 1;
+
+            int columnType = -1;
+
             while (resultSet.next()) {
-                 i = 1; // start at column 1 in every new resultSet
-                 j++; // counter for array
+                int i = 1; // start at column 1 in every new resultSet
 
                 while (i < columnCount + 1) {
                     // columnType switch-case to return the correct data type
                     columnType = resultSetMetaData.getColumnType(i);
                     switch (columnType) {
                         case 4:
-                            responseTable [j] [i] = resultSet.getInt(i);
+                            payload = payload + ", " + resultSet.getInt(i);
                             break;
                         case 1:
-                            responseTable [j] [i] = resultSet.getString(i);
+                            payload = payload + ", " + resultSet.getString(i);
                             break;
 
                         default:
-                            responseTable [j] [i] = resultSet.getString(i);
+                            payload = payload + ", " + resultSet.getString(i);
                             break;
                     }
+                    System.out.println(payload);
                     i++;
                 }
-            }*/
-            System.out.println(responseTable);
+            }
         }
     }
 
