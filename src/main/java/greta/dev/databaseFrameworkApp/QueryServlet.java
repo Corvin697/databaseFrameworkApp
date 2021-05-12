@@ -85,7 +85,9 @@ public class QueryServlet extends HttpServlet {
             int columnCount = resultSetMetaData.getColumnCount();
 
             int rowCount = 0;
-            while(resultSet.next()) rowCount++;
+            while(resultSet.next())  {
+                rowCount++;
+            }
             Object [] [] responseTable = new Object[columnCount][rowCount];
 
             for(int i = 1; i < columnCount +1;i++) {
