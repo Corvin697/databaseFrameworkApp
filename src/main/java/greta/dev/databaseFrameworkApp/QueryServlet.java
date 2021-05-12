@@ -79,7 +79,7 @@ public class QueryServlet extends HttpServlet {
     }
 
     protected void writeSql(ResultSet resultSet, HttpServletResponse httpServletResponse) throws SQLException, IOException {
-        //Response Payload: "sql, [columnCount], [rowCount], columnnames, rowData
+        //Response Payload Structure: "sql, columnCount, columnnames, rowData, rowCount
         if (resultSet != null) {
             String payload = "sql";
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
@@ -88,20 +88,17 @@ public class QueryServlet extends HttpServlet {
             int columnCount = resultSetMetaData.getColumnCount();
             int rowCount = 0;
 
-            while (resultSet.next()) {
-                rowCount++;
-            }
-
             payload = payload + ", " + columnCount + ", " + rowCount;
 
             for (int i = 1; i < columnCount + 1; i++) {
                 payload = payload + ", " + resultSetMetaData.getColumnName(i);
             }
 
-            int columnType = -1;
+            int columnType = 0;
 
             while (resultSet.next()) {
                 int i = 1; // start at column 1 in every new resultSet
+                rowCount++;
 
                 while (i < columnCount + 1) {
                     // columnType switch-case to return the correct data type
@@ -118,10 +115,11 @@ public class QueryServlet extends HttpServlet {
                             payload = payload + ", " + resultSet.getString(i);
                             break;
                     }
-                    System.out.println(payload);
                     i++;
                 }
             }
+            payload = payload + ", " + rowCount;
+            out.println(payload);
         }
     }
 

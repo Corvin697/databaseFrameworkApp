@@ -13,7 +13,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         if(asyncRequest.readyState == 4 && asyncRequest.status == 200)
                         {
                             const bodyElements = document.getElementById("body-elements")
-                            bodyElements.innerHTML = asyncRequest.responseText
+                            const databaseType = asyncRequest.responseText.split(",")[0]
+                            console.log(databaseType)
                         }
                     })
                     asyncRequest.open('POST', './QueryServlet', true);
