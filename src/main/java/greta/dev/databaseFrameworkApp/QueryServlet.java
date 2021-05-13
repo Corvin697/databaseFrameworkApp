@@ -80,7 +80,7 @@ public class QueryServlet extends HttpServlet {
 
     protected void writeSql(ResultSet resultSet, HttpServletResponse httpServletResponse) throws SQLException, IOException {
         //Response Payload Structure: "sql, columnCount, columnnames, rowData, rowCount
-        if (resultSet != null) {
+        if (resultSet != null && httpServletResponse != null) {
             String payload = "sql";
             ResultSetMetaData resultSetMetaData = resultSet.getMetaData();
             PrintWriter out = httpServletResponse.getWriter();
@@ -88,10 +88,11 @@ public class QueryServlet extends HttpServlet {
             int columnCount = resultSetMetaData.getColumnCount();
             int rowCount = 0;
 
-            payload = payload + ", " + columnCount + ", " + rowCount;
+            payload = payload + ", " + columnCount;
 
             for (int i = 1; i < columnCount + 1; i++) {
                 payload = payload + ", " + resultSetMetaData.getColumnName(i);
+                System.out.println(resultSetMetaData.getColumnName(i));
             }
 
             int columnType = 0;
@@ -120,39 +121,33 @@ public class QueryServlet extends HttpServlet {
             }
             payload = payload + ", " + rowCount;
             out.println(payload);
+            System.out.println(rowCount);
         }
     }
 
 
     protected void writeDocuments(Document [] documents, HttpServletResponse httpServletResponse) throws IOException {
+        //Response Payload Structure: "mongoDb, documentCount, {documentLength, keys, values}
+        //Method can´t handle Objects in a document
         if (documents != null && httpServletResponse != null) {
+            String payload = "mongoDb" + ", " + documents.length;
             PrintWriter out = httpServletResponse.getWriter();
             for (int i = 0; i < documents.length; i++) {
-                out.println("<div id=\"table-element\" class=\"formatted document-table\">");
-                out.println("<table class=\"table table-striped table-dark\">");
-                out.println("<thead>");
-                out.println("<tr>");
-                out.println("<th scope=\"col\">#</th>");
-                out.println("<th scope=\"col\">Key</th>");
-                out.println("<th scope=\"col\">Value</th>");
-                out.println("</tr>");
-                out.println("</thead>");
-                out.println("<tbody>");
                 Document document = documents[i];
                 Object[] keys = document.keySet().stream().toArray();
                 Object[] values = document.values().toArray();
+                //Every Key must have a value!
+                payload = payload + ", " + document.size();
 
                 for (int j = 0; j < document.size(); j++) {
-                    out.println("<tr>");
-                    out.println("<th scope=\"row\">" + j + "</th>");
-                    out.println("<td>" + keys[j] + "</td>");
-                    out.println("<td>" + values[j] + "</td>");
-                    out.println("</tr>");
+                    payload = payload + ", " + keys[j];
                 }
-                out.println("</tbody>");
-                out.println("</table>");
-                out.println("</div>");
+                for (int j = 0; j < document.size(); j++) {
+                    payload = payload + ", " + values[j];
+                }
             }
+            out.println(payload);
+            System.out.println(payload);
         }
     }
 }
