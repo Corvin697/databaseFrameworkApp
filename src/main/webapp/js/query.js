@@ -91,11 +91,11 @@ function writeMongo(XMLHttpRequest) {
         const documentCount = parseInt(splittedResponseText[1])
         let documentLength = 0
         let position = 2
-        newInnerHtml = '<div id="document-button" class="formatted"> \n' +
-            '<a href="#" class="btn btn-dark btn-block" role ="button">Show as Document</a> \n' +
-            '</div> \n';
         for(let i = 0; i < documentCount;i++) {
-            newInnerHtml = newInnerHtml + '<div id="table-element" class="formatted document-table"> \n' +
+            newInnerHtml = newInnerHtml + '<div id="document-button" class="formatted"> \n' +
+                '<a href="#" class="btn btn-dark btn-block" role ="button">Show as Document</a> \n' +
+                '</div> \n' +
+                '<div id="table-element" class="formatted document-table"> \n' +
                 '<table class="table table-striped table-dark"> \n' +
                 '<thead> \n' + '<tr> \n' + '<th scope ="col">#</th> \n' +
                 '<th scope="col">Key</th> \n' + '<th scope="col">Value</th> \n' +
