@@ -38,6 +38,17 @@ h1,h2,h3,h4,h5,h6 {
     padding-left: 30%;
     padding-right: 30%;
 }
+
+.error-warning {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding-top: 1%;
+    padding-left: 30%;
+    padding-right: 30%;
+}
+
 .submit-button {
     display: flex;
     align-items: center;
