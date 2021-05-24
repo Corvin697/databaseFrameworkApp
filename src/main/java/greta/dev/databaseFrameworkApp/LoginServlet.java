@@ -1,13 +1,8 @@
 package greta.dev.databaseFrameworkApp;
 
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
-import greta.dev.databaseFrameworkApp.Impl.MongoDbImpl;
 import greta.dev.databaseFrameworkApp.Impl.MySqlImpl;
-import jakarta.servlet.*;
 import jakarta.servlet.http.*;
 import jakarta.servlet.annotation.*;
-import org.bson.Document;
 
 import java.io.IOException;
 import java.io.PrintWriter;

@@ -14,7 +14,6 @@ import org.bson.Document;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.*;
-import java.util.Arrays;
 import java.util.stream.Collectors;
 
 @WebServlet(name = "QueryServlet", value = "/QueryServlet")
@@ -58,23 +57,31 @@ public class QueryServlet extends HttpServlet {
         {
             payload = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
         }
-        switch(payload) {
-            case "mitarbeiter":
-                mongoDatabase = mongoDb.connectToMongoDb(mongoHostName, mongoDatabaseName);
-                mongoCollection = mongoDb.getMongoCollection("employees", mongoDatabase);
-                documents = mongoDb.getCollectionDocuments("employees", mongoDatabase);
-                writeDocuments(documents, response);
-                break;
-
-            case "inventar":
-                try {
-                    connection = mySql.connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
-                    String command = "SELECT * FROM products";
-                    resultSet = mySql.getResultSet(connection, command, preparedStatement);
-                    writeSql(resultSet, response);
-                } catch (SQLException throwables) {
-                    throwables.printStackTrace();
-                }
+        if(payload.contains("mitarbeiter")) {
+            mongoDatabase = mongoDb.connectToMongoDb(mongoHostName, mongoDatabaseName);
+            mongoCollection = mongoDb.getMongoCollection("employees", mongoDatabase);
+            documents = mongoDb.getCollectionDocuments("employees", mongoDatabase);
+            writeDocuments(documents, response);
+        }
+        else if(payload.contains("inventar")) {
+            try {
+                connection = mySql.connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
+                String command = "SELECT * FROM products";
+                resultSet = mySql.getResultSet(connection, command, preparedStatement);
+                writeSql(resultSet, response);
+            } catch (SQLException throwables) {
+                throwables.printStackTrace();
+            }
+        }
+        else if(payload.contains("change")) {
+            if(payload.contains("mongo")) {
+                PrintWriter out = response.getWriter();
+                out.println("MongoDB Change Request received");
+            }
+        }
+        else {
+            PrintWriter out = response.getWriter();
+            out.println("Undefined");
         }
     }
 
@@ -92,7 +99,6 @@ public class QueryServlet extends HttpServlet {
 
             for (int i = 1; i < columnCount + 1; i++) {
                 payload = payload + ", " + resultSetMetaData.getColumnName(i);
-                System.out.println(resultSetMetaData.getColumnName(i));
             }
 
             int columnType = 0;
@@ -121,7 +127,6 @@ public class QueryServlet extends HttpServlet {
             }
             payload = payload + ", " + rowCount;
             out.println(payload);
-            System.out.println(rowCount);
         }
     }
 

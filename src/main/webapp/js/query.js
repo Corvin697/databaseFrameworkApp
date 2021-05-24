@@ -6,6 +6,9 @@ let bodyElements = ""
 let newInnerHtmlArray = new Array(0)
 const changeEvent = new Event("change")
 let oldTableHtml = ""
+let initialTableRows = new Array()
+let changeKeys = new Array()
+let changeValues = new Array()
 
 document.addEventListener("DOMContentLoaded",(event) => {
     loadQuery()
@@ -46,6 +49,7 @@ function loadQuery() {
                                 newInnerHtmlArray = new Array(parseInt(documentCount))
                                 newInnerHtmlArray = writeMongo(asyncRequest)
                                 bodyElements.innerHTML = newInnerHtmlArray[0]
+                                initialTableRows = document.getElementsByTagName("tr")
                                 //Call change event to signalize that html was changed
                                 document.dispatchEvent(changeEvent)
                             }
@@ -77,8 +81,8 @@ function applyButtonClicked() {
     if(applyButton !== null) {
         applyButton.addEventListener("click", (event) => {
             event.preventDefault()
-
-
+            oldTableHtml = document.getElementById("table-element").innerHTML
+            collectChangedData()
             document.getElementById("table-element").innerHTML =
                 '<div class="alert alert-danger" role="alert"> \n' +
                 '<h4 class="alert-heading">Warning! &#128552 </h4> \n' +
@@ -94,12 +98,58 @@ function applyButtonClicked() {
     }
 }
 
+function collectChangedData() {
+    //Get all Table-Rows
+    const tableRows = document.getElementsByTagName("tr")
+    let initialTableKeys = new Array()
+    let initialTableValues = new Array()
+    let newTableKeys = new Array()
+    let newTableValues = new Array()
+    //For-Loop starts at 1, because first row only contains <th> Elements
+    for(let i = 1; i < tableRows.length; i++ ) {
+        //Get every <td> element after apply Button was clicked and sort in keys and values
+        newTableKeys[i] = tableRows[i].getElementsByTagName("td")[0].innerText
+        newTableValues[i] = tableRows[i].getElementsByTagName("td")[1].innerText
+    }
+    //TODO: Only change key-value pairs that have been edited
+    /*
+    //For-Loop starts at 1, because first row only contains <th> Elements
+    for(let i = 1; i < initialTableRows.length; i++ ) {
+        //Get every initial <td> element and sort in keys and values
+        initialTableKeys[i] = initialTableRows[i].getElementsByTagName("td")[0].innerText
+        initialTableValues[i] = initialTableRows[i].getElementsByTagName("td")[1].innerText
+        console.log(" old key: " + newTableKeys[i] + " old Value: " + newTableValues[i])
+    }
+    //Compare Data and create data to be changed
+    for(let i = 1; i < initialTableRows.length; i++) {
+        //If key or value was changed the complete key-value pair will be changed
+        if(initialTableKeys[i] !== newTableKeys[i] || initialTableValues[i] !== newTableValues[i]) {
+            changeKeys.push(newTableKeys[i])
+            changeValues.push(newTableValues[i])
+        }
+    }
+     */
+    changeValues = newTableValues
+    changeKeys = newTableKeys
+}
+
 function warningYesClicked() {
     const yesButton = document.getElementById("apply-button-yes")
     yesButton.addEventListener("click", (event) => {
         //TODO: Build Table with changed values
 
         event.preventDefault()
+        let asyncRequest = new XMLHttpRequest();
+        asyncRequest.open('POST', './QueryServlet', true);
+        let payload = "change mongo " + changeKeys.toString() + changeValues.toString()
+        asyncRequest.send(payload)
+
+        asyncRequest.addEventListener("readystatechange", (event) => {
+            if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
+                console.log("Change Response angekommen")
+                alert(asyncRequest.responseText)
+            }
+        })
 
         let oldHtml = document.getElementById("table-element")
         oldHtml.innerHTML = '<div class="alert alert-success" role="alert"> \n' +
@@ -136,6 +186,7 @@ function nextButtonClicked() {
             if (documentNumber < documentCount -1) {
                 documentNumber++
                 bodyElements.innerHTML = newInnerHtmlArray[documentNumber]
+                initialTableRows = document.getElementsByTagName("tr")
                 //Call change event to signalize that html was changed
                 document.dispatchEvent(changeEvent)
             }
@@ -154,6 +205,7 @@ function previousButtonClicked() {
                 //Decrement documentNumber and show previous
                 documentNumber--
                 bodyElements.innerHTML = newInnerHtmlArray[documentNumber]
+                initialTableRows = document.getElementsByTagName("tr")
                 //Call change event to signalize that html was changed
                 document.dispatchEvent(changeEvent)
             }
