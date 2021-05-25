@@ -5,8 +5,6 @@ let documentCount = -1
 let bodyElements = ""
 let newInnerHtmlArray = new Array(0)
 const changeEvent = new Event("change")
-let oldTableHtml = ""
-let initialTableRows = new Array()
 let changeKeys = new Array()
 let changeValues = new Array()
 
@@ -18,15 +16,16 @@ document.addEventListener("change", () => {
     nextButtonClicked()
     previousButtonClicked()
     applyButtonClicked()
+    addEntryButtonClicked()
 })
 
 function loadQuery() {
-    const submitButton = document.getElementById("query-submit-button")
+    let submitButton = document.getElementById("query-submit-button")
     bodyElements = document.getElementById("body-elements")
     submitButton.addEventListener("click", (event) => {
 
         event.preventDefault()
-        const fieldText = document.getElementById("query-text-input").value
+        let fieldText = document.getElementById("query-text-input").value
         let asyncRequest = new XMLHttpRequest();
         asyncRequest.open('POST', './QueryServlet', true);
         asyncRequest.send(fieldText)
@@ -34,7 +33,7 @@ function loadQuery() {
         asyncRequest.addEventListener("readystatechange", (event) => {
             if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
                 bodyElements = document.getElementById("body-elements")
-                const databaseType = asyncRequest.responseText.split(",")[0]
+                let databaseType = asyncRequest.responseText.split(",")[0]
                 switch (databaseType) {
                     case "sql":
                         if (bodyElements !== null) {
@@ -49,7 +48,6 @@ function loadQuery() {
                                 newInnerHtmlArray = new Array(parseInt(documentCount))
                                 newInnerHtmlArray = writeMongo(asyncRequest)
                                 bodyElements.innerHTML = newInnerHtmlArray[0]
-                                initialTableRows = document.getElementsByTagName("tr")
                                 //Call change event to signalize that html was changed
                                 document.dispatchEvent(changeEvent)
                             }
@@ -77,11 +75,10 @@ function loadQuery() {
 }
 
 function applyButtonClicked() {
-    const applyButton = document.getElementById("apply-changes-button")
+    let applyButton = document.getElementById("apply-changes-button")
     if(applyButton !== null) {
         applyButton.addEventListener("click", (event) => {
             event.preventDefault()
-            oldTableHtml = document.getElementById("table-element").innerHTML
             collectChangedData()
             document.getElementById("table-element").innerHTML =
                 '<div class="alert alert-danger" role="alert"> \n' +
@@ -94,61 +91,73 @@ function applyButtonClicked() {
 
             warningYesClicked()
             warningNoClicked()
+            document.dispatchEvent(changeEvent)
         })
     }
 }
 
 function collectChangedData() {
     //Get all Table-Rows
-    const tableRows = document.getElementsByTagName("tr")
-    let initialTableKeys = new Array()
-    let initialTableValues = new Array()
-    let newTableKeys = new Array()
-    let newTableValues = new Array()
+    let tableRows = document.getElementsByTagName("tr")
+
     //For-Loop starts at 1, because first row only contains <th> Elements
     for(let i = 1; i < tableRows.length; i++ ) {
         //Get every <td> element after apply Button was clicked and sort in keys and values
-        newTableKeys[i] = tableRows[i].getElementsByTagName("td")[0].innerText
-        newTableValues[i] = tableRows[i].getElementsByTagName("td")[1].innerText
+        changeKeys[i-1] = tableRows[i].getElementsByTagName("td")[0].innerText
+        changeValues[i-1] = tableRows[i].getElementsByTagName("td")[1].innerText
     }
-    //TODO: Only change key-value pairs that have been edited
-    /*
-    //For-Loop starts at 1, because first row only contains <th> Elements
-    for(let i = 1; i < initialTableRows.length; i++ ) {
-        //Get every initial <td> element and sort in keys and values
-        initialTableKeys[i] = initialTableRows[i].getElementsByTagName("td")[0].innerText
-        initialTableValues[i] = initialTableRows[i].getElementsByTagName("td")[1].innerText
-        console.log(" old key: " + newTableKeys[i] + " old Value: " + newTableValues[i])
+}
+
+function addEntryButtonClicked() {
+    let addEntryButton = document.getElementById("add-entry-button")
+    if(addEntryButton !== null) {
+        addEntryButton.addEventListener("click", (event) => {
+            event.preventDefault()
+
+            //Get rowAmount
+            let rowAmount = document.getElementsByTagName("tr").length
+
+            let trElement = document.createElement("tr")
+            let thElement = document.createElement("th")
+            let firstTdElement = document.createElement("td")
+            let secondTdElement = document.createElement("td")
+
+            firstTdElement.setAttribute("contenteditable", "true")
+            secondTdElement.setAttribute("contenteditable", "true")
+            thElement.setAttribute("scope", "row")
+
+            thElement.innerText = (rowAmount -1).toString()
+
+            let tableBody = document.getElementById("table-body")
+
+            trElement.appendChild(thElement)
+            trElement.appendChild(firstTdElement)
+            trElement.appendChild(secondTdElement)
+            tableBody.appendChild(trElement)
+            document.dispatchEvent(changeEvent)
+        }, {once:true})
     }
-    //Compare Data and create data to be changed
-    for(let i = 1; i < initialTableRows.length; i++) {
-        //If key or value was changed the complete key-value pair will be changed
-        if(initialTableKeys[i] !== newTableKeys[i] || initialTableValues[i] !== newTableValues[i]) {
-            changeKeys.push(newTableKeys[i])
-            changeValues.push(newTableValues[i])
-        }
-    }
-     */
-    changeValues = newTableValues
-    changeKeys = newTableKeys
 }
 
 function warningYesClicked() {
-    const yesButton = document.getElementById("apply-button-yes")
+    let yesButton = document.getElementById("apply-button-yes")
     yesButton.addEventListener("click", (event) => {
-        //TODO: Build Table with changed values
 
         event.preventDefault()
         let asyncRequest = new XMLHttpRequest();
         asyncRequest.open('POST', './QueryServlet', true);
-        let payload = "change mongo " + changeKeys.toString() + changeValues.toString()
+        let payload = "edit mongo," + "keys," + changeKeys.toString() + ",values," + changeValues.toString()
         asyncRequest.send(payload)
 
         asyncRequest.addEventListener("readystatechange", (event) => {
             if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
-                console.log("Change Response angekommen")
-                alert(asyncRequest.responseText)
+                if (bodyElements !== null) {
+                    documentCount = parseInt(asyncRequest.responseText.split(",")[1])
+                    newInnerHtmlArray = new Array(parseInt(documentCount))
+                    newInnerHtmlArray = writeMongo(asyncRequest)
+                }
             }
+            document.dispatchEvent(changeEvent)
         })
 
         let oldHtml = document.getElementById("table-element")
@@ -157,28 +166,35 @@ function warningYesClicked() {
             ' <p> Changes have been applied </p> \n' +
             '<p> <button class="btn btn-dark btn-block" id="success-ok-button" role ="button">Ok,cool</button> </p> \n' +
             '</div> \n';
-        let okButton = document.getElementById("success-ok-button")
-        okButton.addEventListener("click", () => {
-            event.preventDefault()
-            //Restore Table
-            //TODO: Show the new, changed table
-            document.getElementById("table-element").innerHTML = oldTableHtml
-        }, {once:true})
+
+        okButtonClicked()
+
     }, {once:true})
 
 }
 
 function warningNoClicked() {
-    const noButton = document.getElementById("apply-button-no")
+    let noButton = document.getElementById("apply-button-no")
     noButton.addEventListener("click", (event) => {
         event.preventDefault()
-        document.getElementById("table-element").innerHTML = oldTableHtml
+        document.getElementById("table-element").innerHTML = newInnerHtmlArray[documentNumber]
+        document.dispatchEvent(changeEvent)
     }, {once:true})
+}
+
+function okButtonClicked() {
+    let okButton = document.getElementById("success-ok-button")
+        okButton.addEventListener("click", (event) => {
+            event.preventDefault()
+            bodyElements.innerHTML = newInnerHtmlArray[documentNumber]
+            //Call change event to signalize that html was changed
+            document.dispatchEvent(changeEvent)
+        })
 }
 
 
 function nextButtonClicked() {
-    const nextButton = document.getElementById("navigation-button-next")
+    let nextButton = document.getElementById("navigation-button-next")
     if (nextButton !== null) {
         nextButton.addEventListener("click", (event) => {
             event.preventDefault()
@@ -186,7 +202,6 @@ function nextButtonClicked() {
             if (documentNumber < documentCount -1) {
                 documentNumber++
                 bodyElements.innerHTML = newInnerHtmlArray[documentNumber]
-                initialTableRows = document.getElementsByTagName("tr")
                 //Call change event to signalize that html was changed
                 document.dispatchEvent(changeEvent)
             }
@@ -197,7 +212,7 @@ function nextButtonClicked() {
 
 function previousButtonClicked() {
     //Show Previous Document
-    const previousButton = document.getElementById("navigation-button-previous")
+    let previousButton = document.getElementById("navigation-button-previous")
     if (previousButton != null) {
         previousButton.addEventListener("click", (event) => {
             event.preventDefault()
@@ -205,7 +220,6 @@ function previousButtonClicked() {
                 //Decrement documentNumber and show previous
                 documentNumber--
                 bodyElements.innerHTML = newInnerHtmlArray[documentNumber]
-                initialTableRows = document.getElementsByTagName("tr")
                 //Call change event to signalize that html was changed
                 document.dispatchEvent(changeEvent)
             }
@@ -216,12 +230,12 @@ function previousButtonClicked() {
 function writeSql (XMLHttpRequest) {
     let newInnerHtml = ""
     if (XMLHttpRequest != null) {
-        const responseText = XMLHttpRequest.responseText;
-        const splitResponseText = responseText.split(",")
-        const columnCount = parseInt(splitResponseText [1])
+        let responseText = XMLHttpRequest.responseText;
+        let splitResponseText = responseText.split(",")
+        let columnCount = parseInt(splitResponseText [1])
         let firstIndexRowData = 2 + columnCount
 
-        const rowCount = parseInt(splitResponseText [splitResponseText.length - 1])
+        let rowCount = parseInt(splitResponseText [splitResponseText.length - 1])
             newInnerHtml = '<div id="table-element" class="formatted sql-table"> \n' +
                 '<table class="table table-striped table-dark"> \n' +
                 '<thead> \n' + '<tr> \n' + '<th scope="col">#</th> \n';
@@ -251,9 +265,9 @@ function writeMongo(XMLHttpRequest) {
     let newInnerHtml = ""
     let newInnerHtmlArray = new Array(0)
     if (XMLHttpRequest != null) {
-        const responseText = XMLHttpRequest.responseText;
-        const splitResponseText = responseText.split(",")
-        const documentCount = parseInt(splitResponseText[1])
+        let responseText = XMLHttpRequest.responseText;
+        let splitResponseText = responseText.split(",")
+        let documentCount = parseInt(splitResponseText[1])
         newInnerHtmlArray = new Array(documentCount)
         let documentLength = 0
         let position = 2
@@ -266,7 +280,7 @@ function writeMongo(XMLHttpRequest) {
                 '<table class="table table-striped table-dark"> \n' +
                 '<thead> \n' + '<tr> \n' + '<th scope ="col">#</th> \n' +
                 '<th scope="col">Key</th> \n' + '<th scope="col">Value</th> \n' +
-                '</tr> \n' + '</thead> \n' + '<tbody> \n';
+                '</tr> \n' + '</thead> \n' + '<tbody id="table-body"> \n';
 
             if (i > 0) {
                 position = position + (2 * documentLength) + 1
@@ -290,7 +304,9 @@ function writeMongo(XMLHttpRequest) {
             newInnerHtml = newInnerHtml + '</tbody> \n' + '</table> \n' + '</div> \n' +
                 '<div id="apply-button" class="formatted"> \n' +
                 '<button class="btn btn-dark btn-block" id="apply-changes-button" role ="button">Apply Changes</button> \n' +
-                '</div>';
+                '</div> \n' + '<div id="add-button" class="formatted"> \n' +
+                '<button class="btn btn-dark btn-block" id="add-entry-button" role ="button">Add New Entry</button> \n' +
+                '</div> \n';
 
             if (documentCount > 1) {
                 newInnerHtml = newInnerHtml + '<div id="navigation-buttons" class="formatted"> \n' +

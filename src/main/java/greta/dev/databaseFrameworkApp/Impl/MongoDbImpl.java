@@ -5,9 +5,24 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.result.UpdateResult;
 import greta.dev.databaseFrameworkApp.MongoDb;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+
+import org.bson.Document;
+
+import org.bson.conversions.Bson;
+
+import org.bson.json.JsonWriterSettings;
+
+import static com.mongodb.client.model.Filters.and;
+
+import static com.mongodb.client.model.Filters.eq;
+
+import static com.mongodb.client.model.Updates.*;
+
+import javax.print.Doc;
 
 
 public class MongoDbImpl implements MongoDb {
@@ -145,4 +160,29 @@ public class MongoDbImpl implements MongoDb {
         }
         return null;
     }
+
+    @Override
+    public void editDocument (MongoCollection collection, MongoDatabase mongoDatabase, Document [] documents, String [] keys, String [] values) {
+        ObjectId objectId = new ObjectId();
+        String documentId = values[0];
+
+        //Get the document Object id
+        for(int i = 0; i < documents.length; i++) {
+            Document document = documents[i];
+            objectId = document.getObjectId("_id");
+            if(objectId.toString().contains(documentId)) {
+                break;
+            }
+        }
+        //Replace the old document with the new table values and keys
+        Document document = new Document();
+        Bson filter = eq("_id", objectId);
+        for(int i = 1; i < values.length; i++) {
+            document.append(keys[i], values[i]);
+            collection.findOneAndReplace(filter, document);
+        }
+    }
 }
+
+
+

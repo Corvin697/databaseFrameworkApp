@@ -28,6 +28,7 @@ public class QueryServlet extends HttpServlet {
     private String user;
     private String password;
     private String mongoDatabaseName;
+    private String mongoCollectionName;
     private String mySqlDatabaseName;
     private String mySqlHostName;
     Document[] documents;
@@ -39,6 +40,7 @@ public class QueryServlet extends HttpServlet {
         user = "root";
         password = "root";
         mongoDatabaseName = "institut2";
+        mongoCollectionName = "employees";
         mongoHostName = user + ":" + password + "@cluster0.1ig2o.mongodb.net/" + mongoDatabaseName + "?retryWrites=true&w=majority";
         mySqlDatabaseName = "inventory";
         mySqlHostName = "localhost:3306";
@@ -59,8 +61,8 @@ public class QueryServlet extends HttpServlet {
         }
         if(payload.contains("mitarbeiter")) {
             mongoDatabase = mongoDb.connectToMongoDb(mongoHostName, mongoDatabaseName);
-            mongoCollection = mongoDb.getMongoCollection("employees", mongoDatabase);
-            documents = mongoDb.getCollectionDocuments("employees", mongoDatabase);
+            mongoCollection = mongoDb.getMongoCollection(mongoCollectionName, mongoDatabase);
+            documents = mongoDb.getCollectionDocuments(mongoCollectionName, mongoDatabase);
             writeDocuments(documents, response);
         }
         else if(payload.contains("inventar")) {
@@ -73,16 +75,50 @@ public class QueryServlet extends HttpServlet {
                 throwables.printStackTrace();
             }
         }
-        else if(payload.contains("change")) {
-            if(payload.contains("mongo")) {
+        else if(payload.contains("edit")) {
+            if (payload.contains("mongo")) {
                 PrintWriter out = response.getWriter();
-                out.println("MongoDB Change Request received");
+                String[] splitRequestText = payload.split(",");
+                //There are always as much keys as values, payload contains "edit mongo", "keys" and "values", these have to be subtracted
+                int keyValueAmount = ((splitRequestText.length - 3) / 2);
+                String[] keys = new String[keyValueAmount];
+                String[] values = new String[keyValueAmount];
+                int valuePosition = 0;
+                int keyPosition = 0;
+
+                //Find key and value start positions
+                for (int i = 0; i < splitRequestText.length; i++) {
+                    if (splitRequestText[i].equals("values")) {
+                        valuePosition = i;
+                    }
+                    if (splitRequestText[i].equals("keys")) {
+                        keyPosition = i;
+                    }
+                }
+                //Extract every key from payload to keys array
+                for(int i = keyPosition +1; i < valuePosition; i++) {
+                    int position = i - keyPosition -1;
+                    if(position > -1 && position < keyValueAmount) {
+                        keys[position] = splitRequestText[i];
+                    }
+                }
+                //Extract every value from payload to values array
+                for(int i = valuePosition +1; i <= splitRequestText.length; i++) {
+                    int position = i - valuePosition -1;
+                    if (position > -1 && position < keyValueAmount) {
+                        values[position] = splitRequestText[i];
+                    }
+                }
+                mongoDb.editDocument(mongoCollection, mongoDatabase, documents, keys, values);
+                documents = mongoDb.getCollectionDocuments(mongoCollectionName, mongoDatabase);
+                writeDocuments(documents, response);
             }
         }
         else {
             PrintWriter out = response.getWriter();
-            out.println("Undefined");
+            out.println("Invalid payload");
         }
+
     }
 
     protected void writeSql(ResultSet resultSet, HttpServletResponse httpServletResponse) throws SQLException, IOException {
@@ -152,7 +188,6 @@ public class QueryServlet extends HttpServlet {
                 }
             }
             out.println(payload);
-            System.out.println(payload);
         }
     }
 }
