@@ -177,7 +177,7 @@ function warningNoClicked() {
     let noButton = document.getElementById("apply-button-no")
     noButton.addEventListener("click", (event) => {
         event.preventDefault()
-        document.getElementById("table-element").innerHTML = newInnerHtmlArray[documentNumber]
+        bodyElements.innerHTML = newInnerHtmlArray[documentNumber]
         document.dispatchEvent(changeEvent)
     }, {once:true})
 }
@@ -275,7 +275,7 @@ function writeMongo(XMLHttpRequest) {
         for (i; i < documentCount; i++) {
             newInnerHtml ='<div id="document-button" class="formatted"> \n' +
                 '<button class="btn btn-dark btn-block" id="document-button" role ="button">Show as Document</button> \n' +
-                '</div> \n' + '<div class ="formatted document-count"> \n' + '<h3> Result ' + (i + 1) + ' of ' + documentCount + '</h3> \n </div> \n' +
+                '</div> \n' + '<div class ="formatted document-count" id="document-counter"> \n' + '<h3> Result ' + (i + 1) + ' of ' + documentCount + '</h3> \n </div> \n' +
                 '<div id="table-element" class="formatted document-table"> \n' +
                 '<table class="table table-striped table-dark"> \n' +
                 '<thead> \n' + '<tr> \n' + '<th scope ="col">#</th> \n' +
