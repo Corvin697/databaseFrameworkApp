@@ -1,5 +1,4 @@
 "use strict"
-
 let documentNumber = 0
 let documentCount = -1
 let bodyElements = ""
@@ -17,6 +16,8 @@ document.addEventListener("change", () => {
     previousButtonClicked()
     applyButtonClicked()
     addEntryButtonClicked()
+    addSqlEntryButtonClicked()
+    applySqlButtonClicked()
 })
 
 function loadQuery() {
@@ -96,16 +97,99 @@ function applyButtonClicked() {
     }
 }
 
+function collectSqlTableData() {
+    let rows = document.getElementsByClassName("user-generated")
+    let columnHeaders = document.getElementsByTagName("tr").item(0).getElementsByTagName("th")
+    let tableData = new Array()
+    //Push amount of columns to array (-2, because first is # and second is not changeable id)
+    tableData.push((columnHeaders.length -2))
+    //Push column names in the array
+    for(let count=2; count < columnHeaders.length; count++) {
+        tableData.push(columnHeaders[count].innerText)
+    }
+    //Loop to get every row
+        for(let i = 0; i < rows.length;i++) {
+            //Loop to get every column, first column (id) is not editable
+            for(let j = 1; j < columnHeaders.length -1;j++) {
+               tableData.push(rows[i].getElementsByTagName("td")[j].innerText)
+            }
+        }
+        return tableData
+}
+
+
+function applySqlButtonClicked() {
+    let applyButton = document.getElementById("apply-sql-changes-button")
+    let tableData = new Array()
+    if(applyButton !== null) {
+        applyButton.addEventListener("click", (event) => {
+            event.preventDefault()
+            tableData = collectSqlTableData()
+            //Hier könnten jetzt noch die 2 Alerts rein (vgl. applyMongo)
+            let asyncRequest = new XMLHttpRequest();
+            asyncRequest.open('POST', './QueryServlet', true);
+            let payload = "edit sql," + tableData
+            asyncRequest.send(payload)
+            /*
+            asyncRequest.addEventListener("readystatechange", (event) => {
+                if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
+                    if (bodyElements !== null) {
+                        documentCount = parseInt(asyncRequest.responseText.split(",")[1])
+                        newInnerHtmlArray = new Array(parseInt(documentCount))
+                        newInnerHtmlArray = writeMongo(asyncRequest)
+                    }
+                }
+                document.dispatchEvent(changeEvent)
+            })
+
+             */
+        },{once:true})
+    }
+}
+
 function collectChangedData() {
     //Get all Table-Rows
     let tableRows = document.getElementsByTagName("tr")
 
     //For-Loop starts at 1, because first row only contains <th> Elements
-    for(let i = 1; i < tableRows.length; i++ ) {
+    for (let i = 1; i < tableRows.length; i++) {
         //Get every <td> element after apply Button was clicked and sort in keys and values
-        changeKeys[i-1] = tableRows[i].getElementsByTagName("td")[0].innerText
-        changeValues[i-1] = tableRows[i].getElementsByTagName("td")[1].innerText
+        changeKeys[i - 1] = tableRows[i].getElementsByTagName("td")[0].innerText
+        changeValues[i - 1] = tableRows[i].getElementsByTagName("td")[1].innerText
     }
+}
+
+function addSqlEntryButtonClicked() {
+    let addSqlEntryButton = document.getElementById("add-sql-entry-button")
+        if(addSqlEntryButton !== null) {
+            addSqlEntryButton.addEventListener("click", (event) => {
+                event.preventDefault()
+                let rowAmount = document.getElementsByTagName("tr").length
+
+                let cellAmount = document.getElementsByTagName("tr").item(1).getElementsByTagName("td").length
+
+                let tableBody = document.getElementById("table-body")
+
+                let trElement = document.createElement("tr")
+
+                let thElement = document.createElement("th")
+                thElement.setAttribute("scope", "row")
+                thElement.innerText = (rowAmount -1).toString()
+                trElement.appendChild(thElement)
+                trElement.classList.add("user-generated")
+                for(let i = 0; i < cellAmount;i++) {
+                    let tdElement = document.createElement("td")
+                    if(i!== 0) {
+                        tdElement.setAttribute("contenteditable", "true")
+                    }
+                    trElement.appendChild(tdElement)
+                }
+                if(tableBody !== null) {
+                    tableBody.appendChild(trElement)
+                }
+                document.dispatchEvent(changeEvent)
+            },{once:true})
+        }
 }
 
 function addEntryButtonClicked() {
@@ -236,27 +320,41 @@ function writeSql (XMLHttpRequest) {
         let firstIndexRowData = 2 + columnCount
 
         let rowCount = parseInt(splitResponseText [splitResponseText.length - 1])
+        if (rowCount === 0) {
+            alert("No results!")
+        } else {
             newInnerHtml = '<div id="table-element" class="formatted sql-table"> \n' +
                 '<table class="table table-striped table-dark"> \n' +
                 '<thead> \n' + '<tr> \n' + '<th scope="col">#</th> \n';
 
-        for (let i = 1; i <= columnCount; i++) {
-            //Columnnames are starting at payload postion 2
-            let columnName = splitResponseText[i + 1]
-            newInnerHtml = newInnerHtml + '<th scope="col">' + columnName + '</th> \n'
-        }
-        newInnerHtml = newInnerHtml + '</tr> \n' + '</thead> \n' + '<tbody> \n'
-        for (let i = 1; i <= rowCount; i++) {
-            firstIndexRowData = 2 + (i * columnCount)
-            newInnerHtml = newInnerHtml + '<tr> \n'
-            newInnerHtml = newInnerHtml + '<th scope ="row">' + (i -1) + '</th> \n'
-            for (let j = 0; j < columnCount; j++) {
-                let rowData = splitResponseText[j + firstIndexRowData]
-                newInnerHtml = newInnerHtml + '<td>' + rowData + '</td> \n'
+            for (let i = 1; i <= columnCount; i++) {
+                //Columnnames are starting at payload postion 2
+                let columnName = splitResponseText[i + 1]
+                newInnerHtml = newInnerHtml + '<th scope="col" class="column-name">' + columnName + '</th> \n'
             }
-            newInnerHtml = newInnerHtml + '</tr> \n'
+            newInnerHtml = newInnerHtml + '</tr> \n' + '</thead> \n' + '<tbody  id="table-body"> \n'
+            for (let i = 1; i <= rowCount; i++) {
+                firstIndexRowData = 2 + (i * columnCount)
+                newInnerHtml = newInnerHtml + '<tr> \n'
+                newInnerHtml = newInnerHtml + '<th scope ="row">' + (i - 1) + '</th> \n'
+                for (let j = 0; j < columnCount; j++) {
+                    let rowData = splitResponseText[j + firstIndexRowData]
+                    if(j !== 0) {
+                        newInnerHtml = newInnerHtml + '<td contenteditable="true">' + rowData + '</td> \n'
+                    }
+                    else {
+                        newInnerHtml = newInnerHtml + '<td>' + rowData + '</td> \n'
+                    }
+                }
+                newInnerHtml = newInnerHtml + '</tr> \n'
+            }
+            newInnerHtml = newInnerHtml + '</tbody> \n' + '</table> \n' + '</div> \n' +
+                '<div id="add-button" class="formatted"> \n' +
+                '<button class="btn btn-dark btn-block" id="add-sql-entry-button" role ="button">Add New Entry</button> \n' +
+                '</div> \n' + '<div id="apply-sql-button" class="formatted"> \n' +
+                '<button class="btn btn-dark btn-block" id="apply-sql-changes-button" role ="button">Apply Changes</button> \n' +
+                '</div> \n';
         }
-        newInnerHtml = newInnerHtml + '</tbody> \n' + '</table> \n' + '</div> \n'
     }
     return newInnerHtml
 }
@@ -302,10 +400,10 @@ function writeMongo(XMLHttpRequest) {
             }
 
             newInnerHtml = newInnerHtml + '</tbody> \n' + '</table> \n' + '</div> \n' +
-                '<div id="apply-button" class="formatted"> \n' +
-                '<button class="btn btn-dark btn-block" id="apply-changes-button" role ="button">Apply Changes</button> \n' +
-                '</div> \n' + '<div id="add-button" class="formatted"> \n' +
+                '<div id="add-button" class="formatted"> \n' +
                 '<button class="btn btn-dark btn-block" id="add-entry-button" role ="button">Add New Entry</button> \n' +
+                '</div> \n' +'<div id="apply-button" class="formatted"> \n' +
+                '<button class="btn btn-dark btn-block" id="apply-changes-button" role ="button">Apply Changes</button> \n' +
                 '</div> \n';
 
             if (documentCount > 1) {
