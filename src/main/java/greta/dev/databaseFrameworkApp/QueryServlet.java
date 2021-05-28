@@ -114,33 +114,33 @@ public class QueryServlet extends HttpServlet {
                 writeDocuments(documents, response);
             }
             else if(payload.contains("sql")) {
-               try {
-                   connection = mySql.connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
+                String[] splitRequestText = payload.split(",");
+                int columnCount = Integer.parseInt(splitRequestText[1]);
+                for(int i = 0; i < payload.length();i++) {
+                    System.out.println(splitRequestText[i]);
+                }
+                if (splitRequestText.length > (columnCount +2)) {
+                    try {
+                        connection = mySql.connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
+                        String columnNames = "";
+                        String values = "";
 
-                   String [] splitRequestText = payload.split(",");
-
-                   int columnCount = Integer.parseInt(splitRequestText[1]);
-
-                   String columnNames = "";
-                   String values = "";
-
-                   for(int i = 0; i < columnCount;i++) {
-                       if(i != 0) {
-                           columnNames = columnNames+ ",";
-                           values = values + ",";
-                       }
-                       columnNames = columnNames +splitRequestText[i + 2];
-                       values = values + "'" + splitRequestText[i + columnCount + 2] + "'" ;
-                   }
-                   String command = "INSERT INTO products(" + columnNames + ") VALUES(" + values +")";
-                   System.out.println(command);
-
-                   resultSet = mySql.getResultSet(connection, command, preparedStatement);
-                   writeSql(resultSet, response);
-               }
-               catch (SQLException throwables) {
-                   throwables.printStackTrace();
-               }
+                        for (int i = 0; i < columnCount; i++) {
+                            if (i != 0) {
+                                columnNames = columnNames + ",";
+                                values = values + ",";
+                            }
+                            columnNames = columnNames + splitRequestText[i + 2];
+                            values = values + "'" + splitRequestText[i + columnCount + 2] + "'";
+                        }
+                        String command = "INSERT INTO products(" + columnNames + ") VALUES(" + values + ")";
+                        System.out.println(command);
+                        resultSet = mySql.getResultSet(connection, command, preparedStatement);
+                        writeSql(resultSet, response);
+                    } catch (SQLException throwables) {
+                        throwables.printStackTrace();
+                    }
+                }
             }
         }
         else {

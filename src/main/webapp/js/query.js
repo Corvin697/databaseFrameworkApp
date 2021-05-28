@@ -1,8 +1,11 @@
 "use strict"
+let queryText = ""
 let documentNumber = 0
 let documentCount = -1
 let bodyElements = ""
 let newInnerHtmlArray = new Array(0)
+let newTableData = new Array()
+let sqlResultHtml = ""
 const changeEvent = new Event("change")
 let changeKeys = new Array()
 let changeValues = new Array()
@@ -18,6 +21,7 @@ document.addEventListener("change", () => {
     addEntryButtonClicked()
     addSqlEntryButtonClicked()
     applySqlButtonClicked()
+    updateSqlButtonClicked()
 })
 
 function loadQuery() {
@@ -26,52 +30,8 @@ function loadQuery() {
     submitButton.addEventListener("click", (event) => {
 
         event.preventDefault()
-        let fieldText = document.getElementById("query-text-input").value
-        let asyncRequest = new XMLHttpRequest();
-        asyncRequest.open('POST', './QueryServlet', true);
-        asyncRequest.send(fieldText)
-
-        asyncRequest.addEventListener("readystatechange", (event) => {
-            if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
-                bodyElements = document.getElementById("body-elements")
-                let databaseType = asyncRequest.responseText.split(",")[0]
-                switch (databaseType) {
-                    case "sql":
-                        if (bodyElements !== null) {
-                            bodyElements.innerHTML = writeSql(asyncRequest)
-                            document.dispatchEvent(changeEvent)
-                        }
-                        break;
-
-                        case "mongoDb":
-                            if (bodyElements !== null) {
-                                documentCount = parseInt(asyncRequest.responseText.split(",")[1])
-                                newInnerHtmlArray = new Array(parseInt(documentCount))
-                                newInnerHtmlArray = writeMongo(asyncRequest)
-                                bodyElements.innerHTML = newInnerHtmlArray[0]
-                                //Call change event to signalize that html was changed
-                                document.dispatchEvent(changeEvent)
-                            }
-                            break;
-
-                            default:
-                                //Placeholder for Error-Warning
-                                let oldHtml = document.getElementById("body-elements").innerHTML
-                                bodyElements.innerHTML = '<div class="alert alert-danger error-warning" role="alert"> \n' +
-                                    '<h4 class="alert-heading">Error! &#128533 </h4> \n' +
-                                    '<p>Something went wrong</p> \n' +
-                                    '<p> <button class="btn btn-dark btn-block" id="error-ok-button" role ="button">Ok,cool</button> </p> \n' +
-                                    '</div> \n';
-                                let errorOkButton = document.getElementById("error-ok-button")
-                                errorOkButton.addEventListener("click", () => {
-                                    event.preventDefault()
-                                    document.dispatchEvent(changeEvent)
-                                    //Reload query.html
-                                    location.reload()
-                                })
-                }
-            }
-        })
+        queryText = document.getElementById("query-text-input").value
+        sendRequest()
     })
 }
 
@@ -90,59 +50,118 @@ function applyButtonClicked() {
                 '<button class="btn btn-dark btn-block" id="apply-button-no" role ="button">No, i´m scared</button> \n' +
                 '</p> \n' + '</div> \n';
 
-            warningYesClicked()
-            warningNoClicked()
+            mongoWarningYesClicked()
+            mongoWarningNoClicked()
             document.dispatchEvent(changeEvent)
         })
     }
 }
 
-function collectSqlTableData() {
-    let rows = document.getElementsByClassName("user-generated")
-    let columnHeaders = document.getElementsByTagName("tr").item(0).getElementsByTagName("th")
-    let tableData = new Array()
-    //Push amount of columns to array (-2, because first is # and second is not changeable id)
-    tableData.push((columnHeaders.length -2))
-    //Push column names in the array
-    for(let count=2; count < columnHeaders.length; count++) {
-        tableData.push(columnHeaders[count].innerText)
-    }
-    //Loop to get every row
-        for(let i = 0; i < rows.length;i++) {
-            //Loop to get every column, first column (id) is not editable
-            for(let j = 1; j < columnHeaders.length -1;j++) {
-               tableData.push(rows[i].getElementsByTagName("td")[j].innerText)
-            }
-        }
-        return tableData
-}
+function sendRequest() {
+    let asyncRequest = new XMLHttpRequest();
+    asyncRequest.open('POST', './QueryServlet', true);
+    asyncRequest.send(queryText)
 
+    asyncRequest.addEventListener("readystatechange", (event) => {
+        if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
+            bodyElements = document.getElementById("body-elements")
+            let databaseType = asyncRequest.responseText.split(",")[0]
+            switch (databaseType) {
+                case "sql":
+                    if (bodyElements !== null) {
+                        sqlResultHtml = writeSql(asyncRequest)
+                        bodyElements.innerHTML = sqlResultHtml
+                        document.dispatchEvent(changeEvent)
+                    }
+                    break;
 
-function applySqlButtonClicked() {
-    let applyButton = document.getElementById("apply-sql-changes-button")
-    let tableData = new Array()
-    if(applyButton !== null) {
-        applyButton.addEventListener("click", (event) => {
-            event.preventDefault()
-            tableData = collectSqlTableData()
-            //Hier könnten jetzt noch die 2 Alerts rein (vgl. applyMongo)
-            let asyncRequest = new XMLHttpRequest();
-            asyncRequest.open('POST', './QueryServlet', true);
-            let payload = "edit sql," + tableData
-            asyncRequest.send(payload)
-            /*
-            asyncRequest.addEventListener("readystatechange", (event) => {
-                if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
+                case "mongoDb":
                     if (bodyElements !== null) {
                         documentCount = parseInt(asyncRequest.responseText.split(",")[1])
                         newInnerHtmlArray = new Array(parseInt(documentCount))
                         newInnerHtmlArray = writeMongo(asyncRequest)
+                        bodyElements.innerHTML = newInnerHtmlArray[0]
+                        //Call change event to signalize that html was changed
+                        document.dispatchEvent(changeEvent)
                     }
-                }
-                document.dispatchEvent(changeEvent)
-            })
+                    break;
 
-             */
+                default:
+                    //Placeholder for Error-Warning
+                    let oldHtml = document.getElementById("body-elements").innerHTML
+                    bodyElements.innerHTML = '<div class="alert alert-danger error-warning" role="alert"> \n' +
+                        '<h4 class="alert-heading">Error! &#128533 </h4> \n' +
+                        '<p>Something went wrong</p> \n' +
+                        '<p> <button class="btn btn-dark btn-block" id="error-ok-button" role ="button">Ok,cool</button> </p> \n' +
+                        '</div> \n';
+                    let errorOkButton = document.getElementById("error-ok-button")
+                    errorOkButton.addEventListener("click", () => {
+                        event.preventDefault()
+                        document.dispatchEvent(changeEvent)
+                        //Reload query.html
+                        location.reload()
+                    })
+            }
+        }
+    })
+}
+
+function collectSqlTableData() {
+    let generatedRows = document.getElementsByClassName("user-generated")
+    let headerRow = document.getElementsByTagName("tr").item(0)
+    let tableData = new Array()
+    if(generatedRows !== null && headerRow !== null) {
+        let columnHeaders = headerRow.getElementsByTagName("th")
+        //Push amount of columns to array (-2, because first is #,second is not changeable, third is delete)
+        tableData.push((columnHeaders.length - 3))
+        //Push column names in the array
+        for (let count = 2; count < columnHeaders.length -1; count++) {
+            tableData.push(columnHeaders[count].innerText)
+        }
+        //Loop to get every row
+        for (let i = 0; i < generatedRows.length; i++) {
+            //Loop to get every column, first column (id) is not editable
+            for (let j = 1; j < columnHeaders.length - 2; j++) {
+                tableData.push(generatedRows[i].getElementsByTagName("td")[j].innerText)
+            }
+        }
+    }
+    return tableData
+}
+
+function updateSqlButtonClicked() {
+    let updateButton = document.getElementById("update-sql-button")
+    if(updateButton !== null) {
+        updateButton.addEventListener("click", (event) => {
+            event.preventDefault()
+            sendRequest()
+            document.dispatchEvent(changeEvent)
+            }
+        )
+    }
+}
+
+function applySqlButtonClicked() {
+    let applyButton = document.getElementById("apply-sql-changes-button")
+    if(applyButton !== null) {
+        applyButton.addEventListener("click", (event) => {
+            event.preventDefault()
+            newTableData = collectSqlTableData()
+            if(newTableData.length > 0) {
+                //Hier könnten jetzt noch die 2 Alerts rein (vgl. applyMongo)
+
+                document.getElementById("table-element").innerHTML =
+                    '<div class="alert alert-danger" role="alert"> \n' +
+                    '<h4 class="alert-heading">Warning! &#128552 </h4> \n' +
+                    ' <p>You´re about to change data directly in the database! This can´t be undone!</p> \n' + '<hr> \n' +
+                    '<p class="mb-0"> Are you sure you want to save changes? \n' +
+                    '<button class="btn btn-dark btn-block" id="apply-button-yes" role ="button">Yes, apply!</button> \n' +
+                    '<button class="btn btn-dark btn-block" id="apply-button-no" role ="button">No, i´m scared</button> \n' +
+                    '</p> \n' + '</div> \n';
+
+                sqlWarningYesClicked()
+                sqlWarningNoClicked()
+            }
         },{once:true})
     }
 }
@@ -223,7 +242,7 @@ function addEntryButtonClicked() {
     }
 }
 
-function warningYesClicked() {
+function mongoWarningYesClicked() {
     let yesButton = document.getElementById("apply-button-yes")
     yesButton.addEventListener("click", (event) => {
 
@@ -251,13 +270,49 @@ function warningYesClicked() {
             '<p> <button class="btn btn-dark btn-block" id="success-ok-button" role ="button">Ok,cool</button> </p> \n' +
             '</div> \n';
 
-        okButtonClicked()
+        mongoOkButtonClicked()
 
     }, {once:true})
 
 }
 
-function warningNoClicked() {
+function sqlWarningYesClicked() {
+    let yesButton = document.getElementById("apply-button-yes")
+    if(yesButton !== null) {
+        yesButton.addEventListener("click", (event) => {
+            let newHtml = ""
+            event.preventDefault()
+            let asyncRequest = new XMLHttpRequest();
+            asyncRequest.open('POST', './QueryServlet', true);
+            let payload = "edit sql," + newTableData.toString()
+            asyncRequest.send(payload)
+
+            asyncRequest.addEventListener("readystatechange", (event) => {
+                if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
+                    newHtml = writeSql(asyncRequest)
+                }
+                document.dispatchEvent(changeEvent)
+            })
+
+            let oldHtml = document.getElementById("table-element")
+            oldHtml.innerHTML = '<div class="alert alert-success" role="alert"> \n' +
+                '<h4 class="alert-heading">Success! &#128522</h4> \n' +
+                ' <p> Changes have been applied </p> \n' +
+                '<p> <button class="btn btn-dark btn-block" id="success-ok-button" role ="button">Ok,cool</button> </p> \n' +
+                '</div> \n';
+
+            let okButton = document.getElementById("success-ok-button")
+            okButton.addEventListener("click", (event) => {
+                event.preventDefault()
+                bodyElements.innerHTML = newHtml
+                //Call change event to signalize that html was changed
+                document.dispatchEvent(changeEvent)
+            })
+        }, {once: true})
+    }
+}
+
+function mongoWarningNoClicked() {
     let noButton = document.getElementById("apply-button-no")
     noButton.addEventListener("click", (event) => {
         event.preventDefault()
@@ -266,7 +321,18 @@ function warningNoClicked() {
     }, {once:true})
 }
 
-function okButtonClicked() {
+function sqlWarningNoClicked() {
+    let noButton = document.getElementById("apply-button-no")
+    if(noButton !== null) {
+        noButton.addEventListener("click", (event) => {
+            event.preventDefault()
+            bodyElements.innerHTML = sqlResultHtml
+            document.dispatchEvent(changeEvent)
+        }, {once: true})
+    }
+}
+
+function mongoOkButtonClicked() {
     let okButton = document.getElementById("success-ok-button")
         okButton.addEventListener("click", (event) => {
             event.preventDefault()
@@ -275,7 +341,6 @@ function okButtonClicked() {
             document.dispatchEvent(changeEvent)
         })
 }
-
 
 function nextButtonClicked() {
     let nextButton = document.getElementById("navigation-button-next")
@@ -332,6 +397,7 @@ function writeSql (XMLHttpRequest) {
                 let columnName = splitResponseText[i + 1]
                 newInnerHtml = newInnerHtml + '<th scope="col" class="column-name">' + columnName + '</th> \n'
             }
+            newInnerHtml = newInnerHtml + '<th scope="col">' + 'Delete' + '</th> \n'
             newInnerHtml = newInnerHtml + '</tr> \n' + '</thead> \n' + '<tbody  id="table-body"> \n'
             for (let i = 1; i <= rowCount; i++) {
                 firstIndexRowData = 2 + (i * columnCount)
@@ -346,6 +412,7 @@ function writeSql (XMLHttpRequest) {
                         newInnerHtml = newInnerHtml + '<td>' + rowData + '</td> \n'
                     }
                 }
+                newInnerHtml = newInnerHtml + '<td>' + '<button type="button" class="btn btn-danger"> Delete </button>' + '</td> \n'
                 newInnerHtml = newInnerHtml + '</tr> \n'
             }
             newInnerHtml = newInnerHtml + '</tbody> \n' + '</table> \n' + '</div> \n' +
@@ -353,6 +420,8 @@ function writeSql (XMLHttpRequest) {
                 '<button class="btn btn-dark btn-block" id="add-sql-entry-button" role ="button">Add New Entry</button> \n' +
                 '</div> \n' + '<div id="apply-sql-button" class="formatted"> \n' +
                 '<button class="btn btn-dark btn-block" id="apply-sql-changes-button" role ="button">Apply Changes</button> \n' +
+                '</div> \n' + '<div id="update-button" class="formatted"> \n' +
+                '<button class="btn btn-dark btn-block" id="update-sql-button" role ="button">Update Results</button> \n' +
                 '</div> \n';
         }
     }
