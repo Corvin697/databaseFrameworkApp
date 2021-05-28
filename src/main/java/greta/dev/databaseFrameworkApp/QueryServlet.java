@@ -141,6 +141,21 @@ public class QueryServlet extends HttpServlet {
                 }
             }
         }
+        else if(payload.contains("delete")) {
+            if(payload.contains("sql")) {
+                try {
+                    connection = mySql.connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
+
+                    String command = "DELETE FROM products WHERE product_id =" + payload.split(",")[1];
+                    System.out.println(command);
+                    resultSet = mySql.getResultSet(connection, command, preparedStatement);
+                    writeSql(resultSet, response);
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
+
+            }
+        }
         else {
             PrintWriter out = response.getWriter();
             out.println("Invalid payload");

@@ -22,6 +22,7 @@ document.addEventListener("change", () => {
     applySqlButtonClicked()
     addSqlEntryButtonClicked()
     updateSqlButtonClicked()
+    deleteButtonClicked()
 })
 
 function loadQuery() {
@@ -308,6 +309,33 @@ function sqlWarningYesClicked() {
     }
 }
 
+function deleteButtonClicked() {
+    let buttonCount = document.getElementsByClassName("delete").length
+    for(let i = 0; i < buttonCount; i++) {
+        let deleteButton = document.getElementsByClassName("delete")[i]
+        deleteButton.addEventListener("click", (event) => {
+            event.preventDefault()
+            let rowNumber = deleteButton.getAttribute("id")
+            //Get row id
+            let rowId = deleteButton.parentElement.parentElement.getElementsByTagName("td").item(0).innerText
+            console.log(rowId.toString())
+
+            let asyncRequest = new XMLHttpRequest();
+            asyncRequest.open('POST', './QueryServlet', true);
+            let payload = "delete sql," + rowId.toString()
+            asyncRequest.send(payload)
+
+            asyncRequest.addEventListener("readystatechange", (event) => {
+                if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
+                    writeSql(asyncRequest)
+                }
+            })
+            sendRequest()
+            document.dispatchEvent(changeEvent)
+        }, {once:true})
+    }
+}
+
 function mongoWarningNoClicked() {
     let noButton = document.getElementById("apply-button-no")
     noButton.addEventListener("click", (event) => {
@@ -408,7 +436,7 @@ function writeSql (XMLHttpRequest) {
                         newInnerHtml = newInnerHtml + '<td>' + rowData + '</td> \n'
                     }
                 }
-                newInnerHtml = newInnerHtml + '<td>' + '<button type="button" class="btn btn-danger"> Delete </button>' + '</td> \n'
+                newInnerHtml = newInnerHtml + '<td>' + '<button type="button" class="btn btn-danger delete" id="' + rowCount + '"> Delete </button>' + '</td> \n'
                 newInnerHtml = newInnerHtml + '</tr> \n'
             }
             newInnerHtml = newInnerHtml + '</tbody> \n' + '</table> \n' + '</div> \n' +
