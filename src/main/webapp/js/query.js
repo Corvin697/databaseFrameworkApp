@@ -19,8 +19,8 @@ document.addEventListener("change", () => {
     previousButtonClicked()
     applyButtonClicked()
     addEntryButtonClicked()
-    addSqlEntryButtonClicked()
     applySqlButtonClicked()
+    addSqlEntryButtonClicked()
     updateSqlButtonClicked()
 })
 
@@ -109,24 +109,22 @@ function sendRequest() {
 function collectSqlTableData() {
     let generatedRows = document.getElementsByClassName("user-generated")
     let headerRow = document.getElementsByTagName("tr").item(0)
-    let tableData = new Array()
-    if(generatedRows !== null && headerRow !== null) {
+    if (generatedRows !== null && headerRow !== null) {
         let columnHeaders = headerRow.getElementsByTagName("th")
         //Push amount of columns to array (-2, because first is #,second is not changeable, third is delete)
-        tableData.push((columnHeaders.length - 3))
+        newTableData.push((columnHeaders.length - 3))
         //Push column names in the array
-        for (let count = 2; count < columnHeaders.length -1; count++) {
-            tableData.push(columnHeaders[count].innerText)
+        for (let count = 2; count < columnHeaders.length - 1; count++) {
+            newTableData.push(columnHeaders[count].innerText)
         }
         //Loop to get every row
         for (let i = 0; i < generatedRows.length; i++) {
             //Loop to get every column, first column (id) is not editable
             for (let j = 1; j < columnHeaders.length - 2; j++) {
-                tableData.push(generatedRows[i].getElementsByTagName("td")[j].innerText)
+                newTableData.push(generatedRows[i].getElementsByTagName("td")[j].innerText)
             }
         }
     }
-    return tableData
 }
 
 function updateSqlButtonClicked() {
@@ -146,9 +144,8 @@ function applySqlButtonClicked() {
     if(applyButton !== null) {
         applyButton.addEventListener("click", (event) => {
             event.preventDefault()
-            newTableData = collectSqlTableData()
+            collectSqlTableData()
             if(newTableData.length > 0) {
-                //Hier könnten jetzt noch die 2 Alerts rein (vgl. applyMongo)
 
                 document.getElementById("table-element").innerHTML =
                     '<div class="alert alert-danger" role="alert"> \n' +
@@ -161,6 +158,7 @@ function applySqlButtonClicked() {
 
                 sqlWarningYesClicked()
                 sqlWarningNoClicked()
+                document.dispatchEvent(changeEvent)
             }
         },{once:true})
     }
@@ -280,22 +278,20 @@ function sqlWarningYesClicked() {
     let yesButton = document.getElementById("apply-button-yes")
     if(yesButton !== null) {
         yesButton.addEventListener("click", (event) => {
-            let newHtml = ""
             event.preventDefault()
             let asyncRequest = new XMLHttpRequest();
             asyncRequest.open('POST', './QueryServlet', true);
             let payload = "edit sql," + newTableData.toString()
+            newTableData = []
             asyncRequest.send(payload)
 
             asyncRequest.addEventListener("readystatechange", (event) => {
                 if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
-                    newHtml = writeSql(asyncRequest)
+                     writeSql(asyncRequest)
                 }
-                document.dispatchEvent(changeEvent)
             })
 
-            let oldHtml = document.getElementById("table-element")
-            oldHtml.innerHTML = '<div class="alert alert-success" role="alert"> \n' +
+            document.getElementById("table-element").innerHTML = '<div class="alert alert-success" role="alert"> \n' +
                 '<h4 class="alert-heading">Success! &#128522</h4> \n' +
                 ' <p> Changes have been applied </p> \n' +
                 '<p> <button class="btn btn-dark btn-block" id="success-ok-button" role ="button">Ok,cool</button> </p> \n' +
@@ -304,10 +300,10 @@ function sqlWarningYesClicked() {
             let okButton = document.getElementById("success-ok-button")
             okButton.addEventListener("click", (event) => {
                 event.preventDefault()
-                bodyElements.innerHTML = newHtml
+                sendRequest()
                 //Call change event to signalize that html was changed
                 document.dispatchEvent(changeEvent)
-            })
+            }, {once:true})
         }, {once: true})
     }
 }

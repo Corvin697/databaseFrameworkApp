@@ -116,10 +116,8 @@ public class QueryServlet extends HttpServlet {
             else if(payload.contains("sql")) {
                 String[] splitRequestText = payload.split(",");
                 int columnCount = Integer.parseInt(splitRequestText[1]);
-                for(int i = 0; i < payload.length();i++) {
-                    System.out.println(splitRequestText[i]);
-                }
                 if (splitRequestText.length > (columnCount +2)) {
+
                     try {
                         connection = mySql.connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
                         String columnNames = "";
