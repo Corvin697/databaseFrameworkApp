@@ -5,6 +5,7 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.FindOneAndReplaceOptions;
 import com.mongodb.client.result.UpdateResult;
 import greta.dev.databaseFrameworkApp.MongoDb;
 import org.bson.Document;
@@ -179,8 +180,8 @@ public class MongoDbImpl implements MongoDb {
         Bson filter = eq("_id", objectId);
         for(int i = 1; i < values.length; i++) {
             document.append(keys[i], values[i]);
-            collection.findOneAndReplace(filter, document);
         }
+        collection.findOneAndReplace(filter, document);
     }
 }
 

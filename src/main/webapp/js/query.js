@@ -23,6 +23,10 @@ document.addEventListener("change", () => {
     addSqlEntryButtonClicked()
     updateSqlButtonClicked()
     deleteButtonClicked()
+    showAsDocument()
+    showAsTable()
+    save()
+    deleteDocumentButtonClicked()
 })
 
 function loadQuery() {
@@ -168,12 +172,21 @@ function applySqlButtonClicked() {
 function collectChangedData() {
     //Get all Table-Rows
     let tableRows = document.getElementsByTagName("tr")
+    let changeKey = ""
+    let changeValue = ""
 
     //For-Loop starts at 1, because first row only contains <th> Elements
     for (let i = 1; i < tableRows.length; i++) {
         //Get every <td> element after apply Button was clicked and sort in keys and values
-        changeKeys[i - 1] = tableRows[i].getElementsByTagName("td")[0].innerText
-        changeValues[i - 1] = tableRows[i].getElementsByTagName("td")[1].innerText
+        changeKey = tableRows[i].getElementsByTagName("td")[0].innerText
+        changeValue = tableRows[i].getElementsByTagName("td")[1].innerText
+        if(changeKey !== "" && changeValue !== "") {
+            changeKeys[i - 1] = changeKey
+            changeValues[i - 1] = changeValue
+        }
+        else{
+            alert("Both, Key and Value, must either be empty or defined!")
+        }
     }
 }
 
@@ -223,6 +236,7 @@ function addEntryButtonClicked() {
             let thElement = document.createElement("th")
             let firstTdElement = document.createElement("td")
             let secondTdElement = document.createElement("td")
+            let buttonTdElement = document.createElement("td")
 
             firstTdElement.setAttribute("contenteditable", "true")
             secondTdElement.setAttribute("contenteditable", "true")
@@ -235,6 +249,7 @@ function addEntryButtonClicked() {
             trElement.appendChild(thElement)
             trElement.appendChild(firstTdElement)
             trElement.appendChild(secondTdElement)
+            trElement.appendChild(buttonTdElement)
             tableBody.appendChild(trElement)
             document.dispatchEvent(changeEvent)
         }, {once:true})
@@ -315,10 +330,8 @@ function deleteButtonClicked() {
         let deleteButton = document.getElementsByClassName("delete")[i]
         deleteButton.addEventListener("click", (event) => {
             event.preventDefault()
-            let rowNumber = deleteButton.getAttribute("id")
             //Get row id
             let rowId = deleteButton.parentElement.parentElement.getElementsByTagName("td").item(0).innerText
-            console.log(rowId.toString())
 
             let asyncRequest = new XMLHttpRequest();
             asyncRequest.open('POST', './QueryServlet', true);
@@ -331,6 +344,19 @@ function deleteButtonClicked() {
                 }
             })
             sendRequest()
+            document.dispatchEvent(changeEvent)
+        }, {once:true})
+    }
+}
+
+function deleteDocumentButtonClicked() {
+    let buttonCount = document.getElementsByClassName("delete-document").length
+    for (let i = 0; i < buttonCount; i++) {
+        let deleteButton = document.getElementsByClassName("delete-document")[i]
+        deleteButton.addEventListener("click", (event) => {
+            event.preventDefault()
+            let trElement = deleteButton.parentElement.parentElement
+            trElement.remove()
             document.dispatchEvent(changeEvent)
         }, {once:true})
     }
@@ -400,6 +426,137 @@ function previousButtonClicked() {
     }
 }
 
+function showAsDocument() {
+    let documentButton = document.getElementById("document-button")
+    if(documentButton !== null) {
+        documentButton.addEventListener("click", (event) => {
+            event.preventDefault()
+            let data = '{<br>'
+            //Parse keys and values from HTML-Table
+            const tableData = document.getElementById("table-body").getElementsByTagName("td")
+                for(let i = 0; i < tableData.length; i++) {
+                    //Ignore delete buttons
+
+                        if (!(tableData[i].innerHTML.includes("delete-document"))) {
+                            //Every entry %3 !== 0 is a value, otherwise it´s a key
+                            if (i % 3 !== 0) {
+                                data = data + tableData[i].innerText
+                                //Add a comma after every value except the last two (Delete-Button and last Entry)
+                                if (i < (tableData.length - 2)) {
+                                    data = data + ',<br>'
+                                }
+                            }
+                            else {
+                                data = data + tableData[i].innerText + ':'
+                            }
+                        }
+                    }
+                data = data + '<br>}'
+
+            let newInnerHtml ='<div id="as-table-button" class="formatted"> \n' +
+                '<button class="btn btn-dark btn-block" id="table-button" role ="button">Show as Table</button> \n' +
+                '</div> \n' + '<div id="table-element" class="formatted document-table"> \n' +
+                '<table class="table table-striped table-dark"> \n' +
+                '<td contenteditable="true">' + data + '</td>' + '</table> \n' + '</div> \n' +
+                '<div class="formatted"> \n' +
+                '<button class="btn btn-dark btn-block" id="save-button" role ="button">Save</button> \n' +
+                '</div> \n';
+                bodyElements.innerHTML = newInnerHtml
+            document.dispatchEvent(changeEvent)
+        }, {once:true})}
+}
+
+function showAsTable() {
+    let tableButton = document.getElementById("table-button")
+    if(tableButton !== null) {
+        tableButton.addEventListener("click", (event) => {
+            event.preventDefault()
+            //Text auslesen
+            let data = document.getElementById("table-element").getElementsByTagName("td")[0].innerText.toString()
+
+            //Leerzeichen entfernen
+            data = data.replaceAll("{ ", "")
+            data = data.replaceAll(" }", "")
+            data = data.replaceAll(" ,", ",")
+            data = data.replaceAll(", ", ",")
+            data = data.replaceAll(" :", ",")
+            data = data.replaceAll(": ", ",")
+            //Zeilenumbrüche entfernen
+            data = data.replaceAll("\n","")
+            //Geschweifte Klammern entfernen
+            data = data.replace("{", "")
+            data = data.replace("}", "")
+            //Doppelpunkte durch Kommata ersetzen
+            data = data.replaceAll(":", ",")
+
+            let splitData = data.split(",")
+            let i = 0
+
+            let newInnerHtml = '<div id="as-document-button" class="formatted"> \n' +
+                '<button class="btn btn-dark btn-block" id="document-button" role ="button">Show as Document</button> \n' + '</div> \n' +
+                '<div id="table-element" class="formatted document-table"> \n' +
+                '<table class="table table-striped table-dark"> \n' +
+                '<thead> \n' + '<tr> \n' + '<th scope ="col">#</th> \n' +
+                '<th scope="col">Key</th> \n' + '<th scope="col">Value</th> \n' +
+                '</tr> \n' + '</thead> \n' + '<tbody id="table-body"> \n';
+
+            while(i < splitData.length) {
+                newInnerHtml = newInnerHtml + '<tr> \n' +
+                    '<th scope="row">' + i + '</th> \n';
+
+                //Every entry except _id can be edited
+                if (i === 0) {
+                    newInnerHtml = newInnerHtml + '<td>' + splitData[i] + '</td> \n' +
+                    '<td>' + splitData[i +1] + '</td> \n';
+                }
+                else {
+                    newInnerHtml = newInnerHtml + '<td contenteditable="true">' + splitData[i] + '</td> \n' +
+                    '<td contenteditable="true">' + splitData[i +1] + '</td> \n';
+                }
+                newInnerHtml = newInnerHtml + '</tr> \n';
+                i +=2
+            }
+            newInnerHtml = newInnerHtml + '</tbody> \n' + '</table> \n' + '</div> \n' +
+                '<div id="add-button" class="formatted"> \n' +
+                '<button class="btn btn-dark btn-block" id="add-entry-button" role ="button">Add New Entry</button> \n' +
+                '</div> \n' +'<div id="apply-button" class="formatted"> \n' +
+                '<button class="btn btn-dark btn-block" id="apply-changes-button" role ="button">Apply Changes</button> \n' +
+                '</div> \n';
+
+            if (documentCount > 1) {
+                newInnerHtml = newInnerHtml + '<div id="navigation-buttons" class="formatted"> \n' +
+                    '<button class="btn btn-dark btn-block" id="navigation-button-previous" role="button">Previous Document</button>' +
+                    '<button class="btn btn-dark btn-block" id="navigation-button-next" role="button">Next Document</button>' +
+                    '</div>';
+            }
+
+            bodyElements.innerHTML = newInnerHtml
+            document.dispatchEvent(changeEvent)
+        }, {once:true})
+    }
+}
+
+function save() {
+    let saveButton = document.getElementById("save-button")
+    if(saveButton !== null) {
+        saveButton.addEventListener("click", (event) => {
+            event.preventDefault()
+
+            //Simulate table-presentation and fire click event on "Apply Changes Button"
+            let clickEvent = new Event("click")
+            let tableButton = document.getElementById("table-button")
+            if (tableButton !== null) {
+                tableButton.dispatchEvent(clickEvent)
+                let applyButton = document.getElementById("apply-changes-button")
+                if(applyButton !== null) {
+                applyButton.dispatchEvent(clickEvent)
+            }
+        }
+        document.dispatchEvent(changeEvent)
+        }, {once:true})
+    }
+}
+
 function writeSql (XMLHttpRequest) {
     let newInnerHtml = ""
     if (XMLHttpRequest != null) {
@@ -464,13 +621,14 @@ function writeMongo(XMLHttpRequest) {
         let position = 2
         let i = 0
         for (i; i < documentCount; i++) {
-            newInnerHtml ='<div id="document-button" class="formatted"> \n' +
+            newInnerHtml ='<div id="as-document-button" class="formatted"> \n' +
                 '<button class="btn btn-dark btn-block" id="document-button" role ="button">Show as Document</button> \n' +
                 '</div> \n' + '<div class ="formatted document-count" id="document-counter"> \n' + '<h3> Result ' + (i + 1) + ' of ' + documentCount + '</h3> \n </div> \n' +
                 '<div id="table-element" class="formatted document-table"> \n' +
                 '<table class="table table-striped table-dark"> \n' +
                 '<thead> \n' + '<tr> \n' + '<th scope ="col">#</th> \n' +
                 '<th scope="col">Key</th> \n' + '<th scope="col">Value</th> \n' +
+                '<th scope="col">' + 'Delete' + '</th> \n' +
                 '</tr> \n' + '</thead> \n' + '<tbody id="table-body"> \n';
 
             if (i > 0) {
@@ -479,17 +637,33 @@ function writeMongo(XMLHttpRequest) {
             documentLength = parseInt(splitResponseText[position])
             for (let j = 0; j < documentLength; j++) {
 
-                newInnerHtml = newInnerHtml + '<tr> \n' +
-                    '<th scope="row">' + j + '</th> \n';
-                //Every entry except _id can be edited
-                if (j === 0) {
-                    newInnerHtml = newInnerHtml + '<td>' + splitResponseText[position + 1 + j] + '</td> \n' +
-                        '<td>' + splitResponseText[position + 1 + documentLength + j] + '</td> \n';
-                } else {
-                    newInnerHtml = newInnerHtml + '<td contenteditable="true">' + splitResponseText[position + 1 + j] + '</td> \n' +
-                        '<td contenteditable="true">' + splitResponseText[position + 1 + documentLength + j] + '</td> \n';
-                }
-                newInnerHtml = newInnerHtml + '</tr> \n';
+                //Handle Values that are Objects (other Documents)
+                //Handle Values that are Objects (other Documents)
+                /*
+                if(splitResponseText[position + 1 + documentLength + j].includes("{{")) {
+                    let startPosition = position + 1 + documentLength + j
+                    let endPosition = - 1
+                    for(let count = 0; count < splitResponseText.length; count++) {
+                        if(splitResponseText[count].includes("}}")) {
+                            endPosition = count
+
+                            let document = splitResponseText.slice(startPosition, endPosition +1).toString()
+
+                 */
+
+                    newInnerHtml = newInnerHtml + '<tr> \n' +
+                        '<th scope="row">' + j + '</th> \n';
+                    //Every entry except _id can be edited
+                    if (j === 0) {
+
+                        newInnerHtml = newInnerHtml + '<td>' + splitResponseText[position + 1 + j] + '</td> \n' +
+                            '<td>' + splitResponseText[position + 1 + documentLength + j] + '</td> \n';
+                    } else {
+                        newInnerHtml = newInnerHtml + '<td contenteditable="true">' + splitResponseText[position + 1 + j] + '</td> \n' +
+                            '<td contenteditable="true">' + splitResponseText[position + 1 + documentLength + j] + '</td> \n';
+                    }
+
+                newInnerHtml = newInnerHtml +  '<td>' + '<button type="button" class="btn btn-danger delete-document" id="' + j + '"> Delete </button>' + '</td> \n' + '</tr> \n';
             }
 
             newInnerHtml = newInnerHtml + '</tbody> \n' + '</table> \n' + '</div> \n' +

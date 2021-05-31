@@ -132,7 +132,6 @@ public class QueryServlet extends HttpServlet {
                             values = values + "'" + splitRequestText[i + columnCount + 2] + "'";
                         }
                         String command = "INSERT INTO products(" + columnNames + ") VALUES(" + values + ")";
-                        System.out.println(command);
                         resultSet = mySql.getResultSet(connection, command, preparedStatement);
                         writeSql(resultSet, response);
                     } catch (SQLException throwables) {
