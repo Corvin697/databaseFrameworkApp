@@ -78,7 +78,7 @@ public class QueryServlet extends HttpServlet {
         else if(payload.contains("edit")) {
             if (payload.contains("mongo")) {
                 PrintWriter out = response.getWriter();
-                String[] splitRequestText = payload.split(",");
+                String[] splitRequestText = payload.split("\\$");
                 //There are always as much keys as values, payload contains "edit mongo", "keys" and "values", these have to be subtracted
                 int keyValueAmount = ((splitRequestText.length - 3) / 2);
                 String[] keys = new String[keyValueAmount];
@@ -123,15 +123,23 @@ public class QueryServlet extends HttpServlet {
                         String columnNames = "";
                         String values = "";
 
+
                         for (int i = 0; i < columnCount; i++) {
                             if (i != 0) {
                                 columnNames = columnNames + ",";
                                 values = values + ",";
                             }
                             columnNames = columnNames + splitRequestText[i + 2];
-                            values = values + "'" + splitRequestText[i + columnCount + 2] + "'";
+                            if (splitRequestText.length > (i + columnCount + 2)) {
+                                values = values + "'" + splitRequestText[i + columnCount + 2] + "'";
+                            }
+                            else {
+
+                                values = values + "''";
+                            }
                         }
                         String command = "INSERT INTO products(" + columnNames + ") VALUES(" + values + ")";
+                        System.out.println(command);
                         resultSet = mySql.getResultSet(connection, command, preparedStatement);
                         writeSql(resultSet, response);
                     } catch (SQLException throwables) {
@@ -172,10 +180,10 @@ public class QueryServlet extends HttpServlet {
             int columnCount = resultSetMetaData.getColumnCount();
             int rowCount = 0;
 
-            payload = payload + ", " + columnCount;
+            payload = payload + "$ " + columnCount;
 
             for (int i = 1; i < columnCount + 1; i++) {
-                payload = payload + ", " + resultSetMetaData.getColumnName(i);
+                payload = payload + "$ " + resultSetMetaData.getColumnName(i);
             }
 
             int columnType = 0;
@@ -189,20 +197,20 @@ public class QueryServlet extends HttpServlet {
                     columnType = resultSetMetaData.getColumnType(i);
                     switch (columnType) {
                         case 4:
-                            payload = payload + ", " + resultSet.getInt(i);
+                            payload = payload + "$ " + resultSet.getInt(i);
                             break;
                         case 1:
-                            payload = payload + ", " + resultSet.getString(i);
+                            payload = payload + "$ " + resultSet.getString(i);
                             break;
 
                         default:
-                            payload = payload + ", " + resultSet.getString(i);
+                            payload = payload + "$ " + resultSet.getString(i);
                             break;
                     }
                     i++;
                 }
             }
-            payload = payload + ", " + rowCount;
+            payload = payload + "$ " + rowCount;
             out.println(payload);
         }
     }
@@ -212,20 +220,20 @@ public class QueryServlet extends HttpServlet {
         //Response Payload Structure: "mongoDb, documentCount, {documentLength, keys, values}
         //Method can´t handle Objects in a document
         if (documents != null && httpServletResponse != null) {
-            String payload = "mongoDb" + ", " + documents.length;
+            String payload = "mongoDb" + "$ " + documents.length;
             PrintWriter out = httpServletResponse.getWriter();
             for (int i = 0; i < documents.length; i++) {
                 Document document = documents[i];
                 Object[] keys = document.keySet().stream().toArray();
                 Object[] values = document.values().toArray();
                 //Every Key must have a value!
-                payload = payload + ", " + document.size();
+                payload = payload + "$ " + document.size();
 
                 for (int j = 0; j < document.size(); j++) {
-                    payload = payload + ", " + keys[j];
+                    payload = payload + "$ " + keys[j];
                 }
                 for (int j = 0; j < document.size(); j++) {
-                    payload = payload + ", " + values[j];
+                    payload = payload + "$ " + values[j];
                 }
             }
             out.println(payload);
