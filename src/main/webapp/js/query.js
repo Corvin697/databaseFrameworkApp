@@ -308,17 +308,10 @@ function mongoWarningYesClicked() {
                     newInnerHtmlArray = writeMongo(asyncRequest)
                 }
             }
+            bodyElements.innerHTML = newInnerHtmlArray[documentNumber]
             document.dispatchEvent(changeEvent)
         })
 
-        let oldHtml = document.getElementById("table-element")
-        oldHtml.innerHTML = '<div class="alert alert-success" role="alert"> \n' +
-            '<h4 class="alert-heading">Success! &#128522</h4> \n' +
-            ' <p> Changes have been applied </p> \n' +
-            '<p> <button class="btn btn-dark btn-block" id="success-ok-button" role ="button">Ok</button> </p> \n' +
-            '</div> \n';
-
-        mongoOkButtonClicked()
 
     }, {once:true})
 
@@ -341,20 +334,10 @@ function sqlWarningYesClicked() {
                     writeSql(asyncRequest)
                 }
             })
-
-            document.getElementById("table-element").innerHTML = '<div class="alert alert-success" role="alert"> \n' +
-                '<h4 class="alert-heading">Success! &#128522</h4> \n' +
-                ' <p> Changes have been applied </p> \n' +
-                '<p> <button class="btn btn-dark btn-block" id="success-ok-button" role ="button">Ok,cool</button> </p> \n' +
-                '</div> \n';
-
-            let okButton = document.getElementById("success-ok-button")
-            okButton.addEventListener("click", (event) => {
-                event.preventDefault()
                 sendRequest()
                 //Call change event to signalize that html was changed
                 document.dispatchEvent(changeEvent)
-            }, {once:true})
+
         }, {once: true})
     }
 }
@@ -415,16 +398,6 @@ function sqlWarningNoClicked() {
             document.dispatchEvent(changeEvent)
         }, {once: true})
     }
-}
-
-function mongoOkButtonClicked() {
-    let okButton = document.getElementById("success-ok-button")
-    okButton.addEventListener("click", (event) => {
-        event.preventDefault()
-        bodyElements.innerHTML = newInnerHtmlArray[documentNumber]
-        //Call change event to signalize that html was changed
-        document.dispatchEvent(changeEvent)
-    })
 }
 
 function nextButtonClicked() {
@@ -617,17 +590,9 @@ function saveButtonClicked() {
                         newInnerHtmlArray = writeMongo(asyncRequest)
                     }
                 }
+                bodyElements.innerHTML = newInnerHtmlArray[documentNumber]
                 document.dispatchEvent(changeEvent)
             })
-            let oldHtml = document.getElementById("table-element")
-            oldHtml.innerHTML = '<div class="alert alert-success" role="alert"> \n' +
-                '<h4 class="alert-heading">Success!</h4> \n' +
-                ' <p> Changes have been applied </p> \n' +
-                '<p> <button class="btn btn-dark btn-block" id="success-ok-button" role ="button">Ok</button> </p> \n' +
-                '</div> \n';
-
-            mongoOkButtonClicked()
-
         }, {once:true})
     }
 }

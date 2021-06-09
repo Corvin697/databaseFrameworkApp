@@ -43,7 +43,7 @@ public class QueryServlet extends HttpServlet {
         mongoCollectionName = "employees";
         mongoHostName = user + ":" + password + "@cluster0.1ig2o.mongodb.net/" + mongoDatabaseName + "?retryWrites=true&w=majority";
         mySqlDatabaseName = "inventory";
-        mySqlHostName = "localhost:3306";
+        mySqlHostName = "localhost:3307";
     }
 
     @Override
