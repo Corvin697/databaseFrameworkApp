@@ -9,6 +9,7 @@ let sqlResultHtml = ""
 const changeEvent = new Event("change")
 let changeKeys = new Array()
 let changeValues = new Array()
+let embeddedDocumentArray = new Array(0)
 
 document.addEventListener("DOMContentLoaded",(event) => {
     loadQuery()
@@ -23,10 +24,11 @@ document.addEventListener("change", () => {
     addSqlEntryButtonClicked()
     updateSqlButtonClicked()
     deleteButtonClicked()
-    showAsDocument()
-    showAsTable()
-    save()
+    showAsDocumentButtonClicked()
+    showAsTableButtonClicked()
+    saveButtonClicked()
     deleteDocumentButtonClicked()
+    showEmbeddedDocumentButtonClicked()
 })
 
 function loadQuery() {
@@ -45,6 +47,10 @@ function applyButtonClicked() {
     if(applyButton !== null) {
         applyButton.addEventListener("click", (event) => {
             event.preventDefault()
+            if(document.getElementsByClassName("embedded-document-table").length !== 0) {
+                let embeddedDocumentTable = document.getElementsByClassName("embedded-document-table")[0]
+                embeddedDocumentTable.remove()
+            }
             collectChangedData()
             document.getElementById("table-element").innerHTML =
                 '<div class="alert alert-danger" role="alert"> \n' +
@@ -171,7 +177,7 @@ function applySqlButtonClicked() {
 
 function collectChangedData() {
     //Get all Table-Rows
-    let tableRows = document.getElementsByTagName("tr")
+    let tableRows = document.getElementById("body-elements").getElementsByTagName("tr")
     let changeKey = ""
     let changeValue = ""
 
@@ -181,8 +187,17 @@ function collectChangedData() {
         changeKey = tableRows[i].getElementsByTagName("td")[0].innerText
         changeValue = tableRows[i].getElementsByTagName("td")[1].innerText
         if(changeKey !== "" && changeValue !== "") {
-            changeKeys[i - 1] = changeKey
-            changeValues[i - 1] = changeValue
+            //Handle Changed Embedded Documents
+            if(changeValue.includes("Show Embedded Document")) {
+                let embeddedDocumentRowId = tableRows[i].getElementsByTagName("th")[0].innerText
+                changeValue = embeddedDocumentArray[embeddedDocumentRowId]
+                changeKeys[i - 1] = changeKey
+                changeValues[i - 1] = changeValue
+            }
+            else {
+                changeKeys[i - 1] = changeKey
+                changeValues[i - 1] = changeValue
+            }
         }
         else{
             alert("Both, Key and Value, must either be empty or defined!")
@@ -446,21 +461,28 @@ function previousButtonClicked() {
     }
 }
 
-function showAsDocument() {
+function showAsDocumentButtonClicked() {
     let documentButton = document.getElementById("document-button")
     if(documentButton !== null) {
         documentButton.addEventListener("click", (event) => {
             event.preventDefault()
             let data = '{<br>'
             //Parse keys and values from HTML-Table
-            const tableData = document.getElementById("table-body").getElementsByTagName("td")
+            let tableData = document.getElementById("table-body").getElementsByTagName("td")
+
             for(let i = 0; i < tableData.length; i++) {
                 //Ignore delete buttons
 
                 if (!(tableData[i].innerHTML.includes("delete-document"))) {
                     //Every entry %3 !== 0 is a value, otherwise it´s a key
                     if (i % 3 !== 0) {
-                        data = data + tableData[i].innerText
+                        if(tableData[i].innerText.includes("Show Embedded Document")) {
+                            let rowNumber = parseInt(tableData[i].parentElement.getElementsByTagName("th")[0].innerText)
+                            data = data + embeddedDocumentArray[rowNumber].toString()
+                        }
+                        else {
+                            data = data + tableData[i].innerText
+                        }
                         //Add a comma after every value except the last two (Delete-Button and last Entry)
                         if (i < (tableData.length - 2)) {
                             data = data + ',<br>'
@@ -486,7 +508,7 @@ function showAsDocument() {
         }, {once:true})}
 }
 
-function showAsTable() {
+function showAsTableButtonClicked() {
     let tableButton = document.getElementById("table-button")
     if(tableButton !== null) {
         tableButton.addEventListener("click", (event) => {
@@ -556,7 +578,7 @@ function showAsTable() {
     }
 }
 
-function save() {
+function saveButtonClicked() {
     let saveButton = document.getElementById("save-button")
     if(saveButton !== null) {
         saveButton.addEventListener("click", (event) => {
@@ -663,6 +685,48 @@ function writeSql (XMLHttpRequest) {
     return newInnerHtml
 }
 
+function showEmbeddedDocumentButtonClicked() {
+    let showEmbeddedDocumentButtons = document.getElementsByClassName("show-embedded-document")
+    for(let i = 0; i < showEmbeddedDocumentButtons.length;i++) {
+        let showEmbeddedDocumentButton = document.getElementsByClassName("show-embedded-document")[i]
+        showEmbeddedDocumentButton.addEventListener("click", (event) => {
+            event.preventDefault()
+            let showEmbeddedDocumentButtonId = parseInt(showEmbeddedDocumentButton.getAttribute("id"))
+            //Create embedded Document Table
+
+            let embeddedDocument = embeddedDocumentArray[showEmbeddedDocumentButtonId].toString()
+            embeddedDocument = embeddedDocument.replace("Document{{", "").replaceAll("}", "")
+            let splitEmbeddedDocument = embeddedDocument.split(",")
+            let keys = new Array(0)
+            let values = new Array(0)
+            for (let j = 0; j < splitEmbeddedDocument.length; j++) {
+                keys.push(splitEmbeddedDocument[j].split("=")[0])
+                values.push(splitEmbeddedDocument[j].split("=")[1])
+            }
+            let innerHtml = ""
+            innerHtml = innerHtml + '<div id="table-element" class="formatted embedded-document-table"> \n' +
+                '<table class="table table-striped table-dark"> \n' +
+                '<thead> \n' + '<tr> \n' + '<th scope ="col">#</th> \n' +
+                '<th scope="col">Key</th> \n' + '<th scope="col">Value</th> \n' +
+                '</tr> \n' + '</thead> \n' + '<tbody id="embedded-table-body"> \n';
+
+
+            for (let j = 0; j < keys.length; j++) {
+                innerHtml = innerHtml + '<tr> \n' + '<th scope="row">' + j + '</th> \n' +
+                    '<td contenteditable="true">' + keys[j] + '</td> \n' +
+                    '<td contenteditable="true">' + values[j] + '</td> \n' + '</tr> \n';
+            }
+            innerHtml = innerHtml + '</tbody> \n' + '</table> \n' + '</div> \n';
+            if(document.getElementsByClassName("embedded-document-table").length !== 0) {
+                let oldTable = document.getElementsByClassName("embedded-document-table")[0]
+                oldTable.remove()
+        }
+            document.getElementById("body-elements").innerHTML = document.getElementById("body-elements").innerHTML + innerHtml
+            document.dispatchEvent(changeEvent)
+        }, {once:true})
+    }
+}
+
 function writeMongo(XMLHttpRequest) {
     let newInnerHtml = ""
     let newInnerHtmlArray = new Array(0)
@@ -691,18 +755,6 @@ function writeMongo(XMLHttpRequest) {
             documentLength = parseInt(splitResponseText[position])
             for (let j = 0; j < documentLength; j++) {
 
-                //Handle Values that are Objects (other Documents)
-                //Handle Values that are Objects (other Documents)
-                /*
-                if(splitResponseText[position + 1 + documentLength + j].includes("{{")) {
-                    let startPosition = position + 1 + documentLength + j
-                    let endPosition = - 1
-                    for(let count = 0; count < splitResponseText.length; count++) {
-                        if(splitResponseText[count].includes("}}")) {
-                            endPosition = count
-                            let document = splitResponseText.slice(startPosition, endPosition +1).toString()
-                 */
-
                 newInnerHtml = newInnerHtml + '<tr> \n' +
                     '<th scope="row">' + j + '</th> \n';
                 //Every entry except _id can be edited
@@ -711,8 +763,16 @@ function writeMongo(XMLHttpRequest) {
                     newInnerHtml = newInnerHtml + '<td>' + splitResponseText[position + 1 + j] + '</td> \n' +
                         '<td>' + splitResponseText[position + 1 + documentLength + j] + '</td> \n';
                 } else {
-                    newInnerHtml = newInnerHtml + '<td contenteditable="true">' + splitResponseText[position + 1 + j] + '</td> \n' +
-                        '<td contenteditable="true">' + splitResponseText[position + 1 + documentLength + j] + '</td> \n';
+                    // Extract embedded documents
+                    if(splitResponseText[position + 1 + documentLength + j].includes("{{")) {
+                        newInnerHtml = newInnerHtml + '<td contenteditable="true">' + splitResponseText[position + 1 + j] + '</td> \n' +
+                            '<td>' + '<button type="button" class="btn btn-info show-embedded-document" id="' + j + '"> Show Embedded Document </button>' + '</td> \n';
+                        embeddedDocumentArray[j] = splitResponseText[position + 1 + documentLength + j]
+                    }
+                    else {
+                        newInnerHtml = newInnerHtml + '<td contenteditable="true">' + splitResponseText[position + 1 + j] + '</td> \n' +
+                            '<td contenteditable="true">' + splitResponseText[position + 1 + documentLength + j] + '</td> \n';
+                    }
                 }
 
                 newInnerHtml = newInnerHtml +  '<td>' + '<button type="button" class="btn btn-danger delete-document" id="' + j + '"> Delete </button>' + '</td> \n' + '</tr> \n';

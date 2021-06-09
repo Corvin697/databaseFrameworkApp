@@ -71,6 +71,12 @@ h1,h2,h3,h4,h5,h6 {
     padding-right: 20%;
 }
 
+.embedded-document-table {
+    padding-top: 1%;
+    padding-left: 20%;
+    padding-right: 20%;
+}
+
 .sql-table {
     padding-top: 1%;
     padding-left: 20%;

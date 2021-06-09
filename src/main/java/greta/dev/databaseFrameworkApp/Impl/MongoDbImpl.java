@@ -5,32 +5,16 @@ import com.mongodb.client.FindIterable;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
-import com.mongodb.client.model.FindOneAndReplaceOptions;
-import com.mongodb.client.result.UpdateResult;
 import greta.dev.databaseFrameworkApp.MongoDb;
 import org.bson.Document;
 import org.bson.types.ObjectId;
-
-import org.bson.Document;
-
 import org.bson.conversions.Bson;
-
-import org.bson.json.JsonWriterSettings;
-
-import static com.mongodb.client.model.Filters.and;
-
 import static com.mongodb.client.model.Filters.eq;
 
-import static com.mongodb.client.model.Updates.*;
-
-import javax.print.Doc;
 
 
 public class MongoDbImpl implements MongoDb {
 
-    public static MongoClient mongoClient;
-    public static MongoDatabase mongoDatabase;
-    public static MongoCollection mongoCollection;
 
     @Override
     public MongoDatabase connectToMongoDb(String url, String database) {
