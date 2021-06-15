@@ -2,8 +2,8 @@ package greta.dev.databaseFrameworkApp;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
-import greta.dev.databaseFrameworkApp.Impl.MongoDbImpl;
-import greta.dev.databaseFrameworkApp.Impl.MySqlImpl;
+import greta.dev.databaseFrameworkApp.Impl.MongoDbConnectImpl;
+import greta.dev.databaseFrameworkApp.Impl.MySqlConnectImpl;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
@@ -17,11 +17,11 @@ import java.sql.*;
 import java.util.stream.Collectors;
 
 @WebServlet(name = "QueryServlet", value = "/QueryServlet")
-public class QueryServlet extends HttpServlet {
-    MongoDb mongoDb;
+public class QueryServlet extends HttpServlet implements MongoDbConnect, MySqlConnect{
+    MongoDbConnect mongoDb;
     MongoDatabase mongoDatabase;
     MongoCollection mongoCollection;
-    MySql mySql;
+    MySqlConnect mySql;
     Connection connection;
     ResultSet resultSet;
     private String mongoHostName;
@@ -35,19 +35,69 @@ public class QueryServlet extends HttpServlet {
     PreparedStatement preparedStatement;
 
     public void init() {
-        mongoDb = new MongoDbImpl();
-        mySql = new MySqlImpl();
+        mongoDb = new MongoDbConnectImpl();
+        mySql = new MySqlConnectImpl();
         user = "root";
         password = "root";
-        mongoDatabaseName = "institut2";
-        mongoCollectionName = "employees";
+        mongoDatabaseName = "database";
+        mongoCollectionName = "inventory";
         mongoHostName = user + ":" + password + "@cluster0.1ig2o.mongodb.net/" + mongoDatabaseName + "?retryWrites=true&w=majority";
         mySqlDatabaseName = "inventory";
         mySqlHostName = "localhost:3307";
     }
 
     @Override
-    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    public MongoDatabase connectToMongoDb(String url, String database) {
+        if(url != null && database != null) {
+            return mongoDb.connectToMongoDb(url, database);
+        }
+        return null;
+    }
+
+    @Override
+    public MongoCollection getMongoCollection(String collection, MongoDatabase mongoDatabase) {
+        if(collection != null && mongoDatabase != null) {
+            return mongoDb.getMongoCollection(collection, mongoDatabase);
+        }
+        return null;
+    }
+
+    @Override
+    public Document[] getCollectionDocuments(String collection, MongoDatabase database) {
+        if(collection != null && database != null) {
+            return mongoDb.getCollectionDocuments(collection, database);
+        }
+        return null;
+    }
+
+    @Override
+    public void editDocument(MongoCollection collection, MongoDatabase mongoDatabase, Document[] documents, String[] keys, String[] values) {
+        if(collection != null && mongoDatabase != null && documents != null && keys != null && values != null) {
+            mongoDb.editDocument(collection, mongoDatabase, documents, keys, values);
+        }
+    }
+
+    @Override
+    public Connection connectToMysql(String host, String database, String user, String password) throws SQLException {
+        if(host != null && database != null && user != null && password != null) {
+            return mySql.connectToMysql(host, database, user, password);
+        }
+        return null;
+    }
+
+    @Override
+    public ResultSet getResultSet(Connection connection, String command) {
+        if(connection != null && command != null) {
+            return mySql.getResultSet(connection, command);
+        }
+        return null;
+    }
+
+    @Override
+    public void writeResultSet(ResultSet resultSet) throws SQLException {
+        if(resultSet != null) {
+            mySql.writeResultSet(resultSet);
+        }
 
     }
 
@@ -59,17 +109,17 @@ public class QueryServlet extends HttpServlet {
         {
             payload = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
         }
-        if(payload.contains("mitarbeiter")) {
-            mongoDatabase = mongoDb.connectToMongoDb(mongoHostName, mongoDatabaseName);
-            mongoCollection = mongoDb.getMongoCollection(mongoCollectionName, mongoDatabase);
-            documents = mongoDb.getCollectionDocuments(mongoCollectionName, mongoDatabase);
+        if(payload.contains("detailed inventory")) {
+            mongoDatabase = connectToMongoDb(mongoHostName, mongoDatabaseName);
+            mongoCollection = getMongoCollection(mongoCollectionName, mongoDatabase);
+            documents = getCollectionDocuments(mongoCollectionName, mongoDatabase);
             writeDocuments(documents, response);
         }
-        else if(payload.contains("inventar")) {
+        else if(payload.contains("inventory")) {
             try {
-                connection = mySql.connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
-                String command = "SELECT * FROM products";
-                resultSet = mySql.getResultSet(connection, command, preparedStatement);
+                connection = connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
+                String command = "SELECT * FROM " + mySqlDatabaseName;
+                resultSet = getResultSet(connection, command);
                 writeSql(resultSet, response);
             } catch (SQLException throwables) {
                 throwables.printStackTrace();
@@ -110,7 +160,7 @@ public class QueryServlet extends HttpServlet {
                     }
                 }
                 mongoDb.editDocument(mongoCollection, mongoDatabase, documents, keys, values);
-                documents = mongoDb.getCollectionDocuments(mongoCollectionName, mongoDatabase);
+                documents = getCollectionDocuments(mongoCollectionName, mongoDatabase);
                 writeDocuments(documents, response);
             }
             else if(payload.contains("sql")) {
@@ -119,7 +169,7 @@ public class QueryServlet extends HttpServlet {
                 if (splitRequestText.length > (columnCount +2)) {
 
                     try {
-                        connection = mySql.connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
+                        connection = connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
                         String columnNames = "";
                         String values = "";
 
@@ -140,7 +190,7 @@ public class QueryServlet extends HttpServlet {
                         }
                         String command = "INSERT INTO products(" + columnNames + ") VALUES(" + values + ")";
                         System.out.println(command);
-                        resultSet = mySql.getResultSet(connection, command, preparedStatement);
+                        resultSet = getResultSet(connection, command);
                         writeSql(resultSet, response);
                     } catch (SQLException throwables) {
                         throwables.printStackTrace();
@@ -151,11 +201,11 @@ public class QueryServlet extends HttpServlet {
         else if(payload.contains("delete")) {
             if(payload.contains("sql")) {
                 try {
-                    connection = mySql.connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
+                    connection = connectToMysql(mySqlHostName, mySqlDatabaseName, user, password);
 
                     String command = "DELETE FROM products WHERE product_id =" + payload.split(",")[1];
                     System.out.println(command);
-                    resultSet = mySql.getResultSet(connection, command, preparedStatement);
+                    resultSet = getResultSet(connection, command);
                     writeSql(resultSet, response);
                 } catch (SQLException throwables) {
                     throwables.printStackTrace();
@@ -239,4 +289,5 @@ public class QueryServlet extends HttpServlet {
             out.println(payload);
         }
     }
+
 }
