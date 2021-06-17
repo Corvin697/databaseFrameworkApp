@@ -1,3 +1,8 @@
+/**
+ * Author: Corvin Tank
+ * Bachelor Thesis "REALIZATION OF AN INTEGRATIVE DATABASE FRAMEWORK WITH GENERIC OPERATING INTERFACE AS EXAMPLE OF AN INVENTORY DATABASE"
+ */
+
 package greta.dev.databaseFrameworkApp.Impl;
 
 import com.mongodb.*;
@@ -9,22 +14,23 @@ import greta.dev.databaseFrameworkApp.MongoDbConnect;
 import org.bson.Document;
 import org.bson.types.ObjectId;
 import org.bson.conversions.Bson;
-import static com.mongodb.client.model.Filters.eq;
 
+import static com.mongodb.client.model.Filters.eq;
 
 
 public class MongoDbConnectImpl implements MongoDbConnect {
 
 
     @Override
-    public MongoDatabase connectToMongoDb(String url, String database) {
+    public MongoDatabase connectToMongoDb(String url, String database, String user, String password) {
         try {
-            MongoClientURI uri = new MongoClientURI("mongodb+srv://" + url);
+            String[] splitUrl = url.toString().split("/");
+            url = "mongodb+srv://" + user + ":" + password + splitUrl[0] + "/" + database + splitUrl[1];
+            MongoClientURI uri = new MongoClientURI(url);
             MongoClient mongoClient = new MongoClient(uri);
             MongoDatabase mongoDatabase = mongoClient.getDatabase(database);
             return mongoDatabase;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
         return null;
@@ -42,12 +48,12 @@ public class MongoDbConnectImpl implements MongoDbConnect {
     }
 
     @Override
-    public Document [] getCollectionDocuments(String collection, MongoDatabase database) {
+    public Document[] getCollectionDocuments(String collection, MongoDatabase database) {
         try {
             int i = 0;
             MongoCollection mongoCollection = getMongoCollection(collection, database);
             long countDocuments = mongoCollection.countDocuments();
-            Document [] documents = new Document[(int) countDocuments];
+            Document[] documents = new Document[(int) countDocuments];
             FindIterable<Document> findIterable = mongoCollection.find();
             MongoCursor<Document> mongoCursor = findIterable.iterator();
             while (mongoCursor.hasNext()) {
@@ -62,22 +68,22 @@ public class MongoDbConnectImpl implements MongoDbConnect {
     }
 
     @Override
-    public void editDocument (MongoCollection collection, MongoDatabase mongoDatabase, Document [] documents, String [] keys, String [] values) {
+    public void editDocument(MongoCollection collection, MongoDatabase mongoDatabase, Document[] documents, String[] keys, String[] values) {
         ObjectId objectId = new ObjectId();
         String documentId = values[0];
 
         //Get the document Object id
-        for(int i = 0; i < documents.length; i++) {
+        for (int i = 0; i < documents.length; i++) {
             Document document = documents[i];
             objectId = document.getObjectId("_id");
-            if(objectId.toString().contains(documentId)) {
+            if (objectId.toString().contains(documentId)) {
                 break;
             }
         }
         //Replace the old document with the new table values and keys
         Document document = new Document();
         Bson filter = eq("_id", objectId);
-        for(int i = 1; i < values.length; i++) {
+        for (int i = 1; i < values.length; i++) {
             document.append(keys[i], values[i]);
         }
         collection.findOneAndReplace(filter, document);

@@ -1,3 +1,8 @@
+/**
+ * Author: Corvin Tank
+ * Bachelor Thesis "REALIZATION OF AN INTEGRATIVE DATABASE FRAMEWORK WITH GENERIC OPERATING INTERFACE AS EXAMPLE OF AN INVENTORY DATABASE"
+ */
+
 package greta.dev.databaseFrameworkApp;
 
 import com.mongodb.client.MongoCollection;
@@ -11,7 +16,7 @@ public interface MongoDbConnect {
      * @param database
      * @return
      */
-    MongoDatabase connectToMongoDb(String url, String database);
+    MongoDatabase connectToMongoDb(String url, String database, String user, String password);
 
     /**
      * @param collection
@@ -28,12 +33,11 @@ public interface MongoDbConnect {
 
 
     /**
-     *
      * @param collection
      * @param mongoDatabase
      * @param keys
      * @param values
      */
-    void editDocument(MongoCollection collection, MongoDatabase mongoDatabase, Document [] documents, String[] keys, String[] values);
+    void editDocument(MongoCollection collection, MongoDatabase mongoDatabase, Document[] documents, String[] keys, String[] values);
 
 }

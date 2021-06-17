@@ -1,4 +1,10 @@
 "use strict"
+
+/**
+ * Author: Corvin Tank
+ * Bachelor Thesis "REALIZATION OF AN INTEGRATIVE DATABASE FRAMEWORK WITH GENERIC OPERATING INTERFACE AS EXAMPLE OF AN INVENTORY DATABASE"
+ */
+
 let queryFormInput = ""
 let shownDocumentNumber = 0
 let documentCount = -1
@@ -15,9 +21,9 @@ let databaseType = ""
 /**
  * Listen to the "Submit" Button after the DOM Content was loaded
  */
-document.addEventListener("DOMContentLoaded",(event) => {
+document.addEventListener("DOMContentLoaded", (event) => {
     submitButtonClicked()
-}, {once:true})
+}, {once: true})
 
 /**
  * Listen to every change that was made to the DOM
@@ -30,7 +36,6 @@ document.addEventListener("change", () => {
     updateButtonClicked()
     deleteButtonClicked()
     showAsDocumentButtonClicked()
-    saveButtonClicked()
     showEmbeddedDocumentButtonClicked()
 })
 
@@ -57,48 +62,52 @@ function sendRequest() {
     let asyncRequest = new XMLHttpRequest();
     asyncRequest.open('POST', './QueryServlet', true);
     asyncRequest.send(queryFormInput)
+    if (queryFormInput == "") {
+        alert("You entered an empty query")
+    } else {
 
-    asyncRequest.addEventListener("readystatechange", (event) => {
-        if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
-            htmlBodyElements = document.getElementById("body-elements")
-            databaseType = asyncRequest.responseText.split("$")[0]
-            switch (databaseType) {
-                case "sql":
-                    if (htmlBodyElements !== null) {
-                        sqlResultHtml = writeSqlResults(asyncRequest)
-                        htmlBodyElements.innerHTML = sqlResultHtml
-                        document.dispatchEvent(changeEvent)
-                    }
-                    break;
+        asyncRequest.addEventListener("readystatechange", (event) => {
+            if (asyncRequest.readyState == 4 && asyncRequest.status == 200) {
+                htmlBodyElements = document.getElementById("body-elements")
+                databaseType = asyncRequest.responseText.split("$")[0]
+                switch (databaseType) {
+                    case "sql":
+                        if (htmlBodyElements !== null) {
+                            sqlResultHtml = writeSqlResults(asyncRequest)
+                            htmlBodyElements.innerHTML = sqlResultHtml
+                            document.dispatchEvent(changeEvent)
+                        }
+                        break;
 
-                case "mongoDb":
-                    if (htmlBodyElements !== null) {
-                        documentCount = parseInt(asyncRequest.responseText.split("$")[1])
-                        mongoDbResultHtml = new Array(parseInt(documentCount))
-                        mongoDbResultHtml = writeMongoDbResults(asyncRequest)
-                        htmlBodyElements.innerHTML = mongoDbResultHtml[0]
-                        //Call change event to signalize that html was changed
-                        document.dispatchEvent(changeEvent)
-                    }
-                    break;
+                    case "mongoDb":
+                        if (htmlBodyElements !== null) {
+                            documentCount = parseInt(asyncRequest.responseText.split("$")[1])
+                            mongoDbResultHtml = new Array(parseInt(documentCount))
+                            mongoDbResultHtml = writeMongoDbResults(asyncRequest)
+                            htmlBodyElements.innerHTML = mongoDbResultHtml[0]
+                            //Call change event to signalize that html was changed
+                            document.dispatchEvent(changeEvent)
+                        }
+                        break;
 
-                default:
-                    //Placeholder for Error-Warning
-                    htmlBodyElements.innerHTML = '<div class="alert alert-danger error-warning" role="alert"> \n' +
-                        '<h4 class="alert-heading">Error!</h4> \n' +
-                        '<p>Something went wrong</p> \n' +
-                        '<p> <button class="btn btn-dark btn-block" id="error-ok-button" role ="button">Ok</button> </p> \n' +
-                        '</div> \n';
-                    let errorOkButton = document.getElementById("error-ok-button")
-                    errorOkButton.addEventListener("click", () => {
-                        event.preventDefault()
-                        document.dispatchEvent(changeEvent)
-                        //Reload query.html
-                        location.reload()
-                    })
+                    default:
+                        //Placeholder for Error-Warning
+                        htmlBodyElements.innerHTML = '<div class="alert alert-danger error-warning" role="alert"> \n' +
+                            '<h4 class="alert-heading">Error!</h4> \n' +
+                            '<p>Something went wrong</p> \n' +
+                            '<p> <button class="btn btn-dark btn-block" id="error-ok-button" role ="button">Ok</button> </p> \n' +
+                            '</div> \n';
+                        let errorOkButton = document.getElementById("error-ok-button")
+                        errorOkButton.addEventListener("click", () => {
+                            event.preventDefault()
+                            document.dispatchEvent(changeEvent)
+                            //Reload query.html
+                            location.reload()
+                        })
+                }
             }
-        }
-    })
+        })
+    }
 }
 
 /**
@@ -118,8 +127,8 @@ function writeMongoDbResults(XMLHttpRequest) {
         let position = 2
         let i = 0
         for (i; i < documentCount; i++) {
-            let embeddedDocuments = new Array()
-            newInnerHtml ='<div id="as-document-button" class="formatted"> \n' +
+            let embeddedDocumentsArray = new Array()
+            newInnerHtml = '<div id="as-document-button" class="formatted"> \n' +
                 '<button class="btn btn-dark btn-block" id="document-button" role ="button">Show as Document</button> \n' +
                 '</div> \n' + '<div class ="formatted document-count" id="document-counter"> \n' + '<h3> Result ' + (i + 1) + ' of ' + documentCount + '</h3> \n </div> \n' +
                 '<div id="table-element" class="formatted document-table"> \n' +
@@ -144,24 +153,23 @@ function writeMongoDbResults(XMLHttpRequest) {
                         '<td>' + splitResponseText[position + 1 + documentLength + j] + '</td> \n';
                 } else {
                     // Extract embedded documents
-                    if(splitResponseText[position + 1 + documentLength + j].includes("{{")) {
+                    if (splitResponseText[position + 1 + documentLength + j].includes("{{")) {
                         newInnerHtml = newInnerHtml + '<td contenteditable="true">' + splitResponseText[position + 1 + j] + '</td> \n' +
                             '<td>' + '<button type="button" class="btn btn-info show-embedded-document" id="' + j + '"> Show Embedded Document </button>' + '</td> \n';
-                        embeddedDocuments[j] = splitResponseText[position + 1 + documentLength + j]
-                    }
-                    else {
+                        embeddedDocumentsArray[j] = splitResponseText[position + 1 + documentLength + j]
+                    } else {
                         newInnerHtml = newInnerHtml + '<td contenteditable="true">' + splitResponseText[position + 1 + j] + '</td> \n' +
                             '<td contenteditable="true">' + splitResponseText[position + 1 + documentLength + j] + '</td> \n';
                     }
                 }
 
-                newInnerHtml = newInnerHtml +  '<td>' + '<button type="button" class="btn btn-danger delete" id="' + j + '"> Delete </button>' + '</td> \n' + '</tr> \n';
+                newInnerHtml = newInnerHtml + '<td>' + '<button type="button" class="btn btn-danger delete" id="' + j + '"> Delete </button>' + '</td> \n' + '</tr> \n';
             }
 
             newInnerHtml = newInnerHtml + '</tbody> \n' + '</table> \n' + '</div> \n' +
                 '<div id="add-button" class="formatted"> \n' +
                 '<button class="btn btn-dark btn-block" id="add-entry-button" role ="button">Add New Entry</button> \n' +
-                '</div> \n' +'<div id="apply" class="formatted"> \n' +
+                '</div> \n' + '<div id="apply" class="formatted"> \n' +
                 '<button class="btn btn-dark btn-block" id="apply-changes-button" role ="button">Apply Changes</button> \n' +
                 '</div> \n' +
                 '</div> \n' + '<div id="update" class="formatted"> \n' +
@@ -176,17 +184,18 @@ function writeMongoDbResults(XMLHttpRequest) {
             }
 
             newInnerHtmlArray [i] = newInnerHtml
-            embeddedDocuments[i] = embeddedDocuments
+            embeddedDocuments[i] = embeddedDocumentsArray
         }
     }
     return newInnerHtmlArray;
 }
+
 /**
  * This function creates the HTML Code to show a table with the SQL-ResultSet returned by the response
  * @param XMLHttpRequest The HTTP Request that was sent to the QueryServlet
  * @returns {string} A String with the HTML-Code for the SQL-Table the response returned
  */
-function writeSqlResults (XMLHttpRequest) {
+function writeSqlResults(XMLHttpRequest) {
     let newInnerHtml = ""
     if (XMLHttpRequest != null) {
         let responseText = XMLHttpRequest.responseText;
@@ -215,10 +224,9 @@ function writeSqlResults (XMLHttpRequest) {
                 newInnerHtml = newInnerHtml + '<th scope ="row">' + (i - 1) + '</th> \n'
                 for (let j = 0; j < columnCount; j++) {
                     let rowData = splitResponseText[j + firstIndexRowData]
-                    if(j !== 0) {
+                    if (j !== 0) {
                         newInnerHtml = newInnerHtml + '<td contenteditable="true">' + rowData + '</td> \n'
-                    }
-                    else {
+                    } else {
                         newInnerHtml = newInnerHtml + '<td>' + rowData + '</td> \n'
                     }
                 }
@@ -243,10 +251,10 @@ function writeSqlResults (XMLHttpRequest) {
  */
 function applyButtonClicked() {
     let applyButton = document.getElementById("apply-changes-button")
-    if(applyButton !== null) {
+    if (applyButton !== null) {
         applyButton.addEventListener("click", (event) => {
             event.preventDefault()
-            switch(databaseType) {
+            switch (databaseType) {
 
                 case "mongoDb":
                     if (document.getElementsByClassName("embedded-document-table").length !== 0) {
@@ -262,6 +270,14 @@ function applyButtonClicked() {
                         '<button class="btn btn-dark btn-block" id="apply-button-yes" role ="button">Yes, apply!</button> \n' +
                         '<button class="btn btn-dark btn-block" id="apply-button-no" role ="button">No, discard changes</button> \n' +
                         '</p> \n' + '</div> \n';
+
+                    document.getElementById("add-button").remove()
+                    document.getElementById("apply").remove()
+                    document.getElementById("update").remove()
+                    document.getElementById("as-document-button").remove()
+                    document.getElementById("document-counter").remove()
+                    document.getElementById("navigation-buttons").remove()
+
 
                     warningYesButtonClicked()
                     warningNoButtonClicked()
@@ -279,6 +295,10 @@ function applyButtonClicked() {
                             '<button class="btn btn-dark btn-block" id="apply-button-yes" role ="button">Yes, apply!</button> \n' +
                             '<button class="btn btn-dark btn-block" id="apply-button-no" role ="button">No, discard changes</button> \n' +
                             '</p> \n' + '</div> \n';
+
+                        document.getElementById("add-button").remove()
+                        document.getElementById("apply").remove()
+                        document.getElementById("update").remove()
 
                         warningYesButtonClicked()
                         warningNoButtonClicked()
@@ -301,7 +321,7 @@ function applyButtonClicked() {
                     })
                     break;
             }
-            },{once:true})
+        }, {once: true})
     }
 }
 
@@ -315,7 +335,7 @@ function warningYesButtonClicked() {
         let asyncRequest = new XMLHttpRequest();
         asyncRequest.open('POST', './QueryServlet', true);
         let payload = ""
-        switch(databaseType) {
+        switch (databaseType) {
             case "mongoDb" :
                 let keyString = ""
                 let valueString = ""
@@ -383,7 +403,7 @@ function warningYesButtonClicked() {
                 })
                 break;
         }
-    }, {once:true})
+    }, {once: true})
 
 }
 
@@ -394,7 +414,7 @@ function warningNoButtonClicked() {
     let noButton = document.getElementById("apply-button-no")
     noButton.addEventListener("click", (event) => {
         event.preventDefault()
-        switch(databaseType) {
+        switch (databaseType) {
             case "mongoDb":
 
                 htmlBodyElements.innerHTML = mongoDbResultHtml[shownDocumentNumber]
@@ -419,7 +439,7 @@ function warningNoButtonClicked() {
                 })
                 break;
         }
-    }, {once:true})
+    }, {once: true})
 }
 
 /**
@@ -455,26 +475,43 @@ function collectMongoDbData() {
     let changeKey = ""
     let changeValue = ""
 
-    //For-Loop starts at 1, because first row only contains <th> Elements
-    for (let i = 1; i < tableRows.length; i++) {
-        //Get every <td> element after apply Button was clicked and sort in keys and values
-        changeKey = tableRows[i].getElementsByTagName("td")[0].innerText
-        changeValue = tableRows[i].getElementsByTagName("td")[1].innerText
-        if(changeKey !== "" && changeValue !== "") {
-            //Handle Embedded Documents
-            if(changeValue.includes("Show Embedded Document")) {
-                let embeddedDocumentRowId = tableRows[i].getElementsByTagName("th")[0].innerText
-                changeValue = embeddedDocuments[shownDocumentNumber][embeddedDocumentRowId]
-                changedDocumentKeys[i - 1] = changeKey
-                changedDocumentValues[i - 1] = changeValue
-            }
-            else {
-                changedDocumentKeys[i - 1] = changeKey
-                changedDocumentValues[i - 1] = changeValue
+    //Check if User is in the Document View
+    if (tableRows.length === 1) {
+        let documentData = document.getElementsByTagName("td")[0].innerHTML.replaceAll("<br>", "$").replaceAll(":", "$").replaceAll(",$", "$")
+        //Remove first and last {,},$
+        documentData = documentData.substring(2, documentData.length - 2)
+        documentData = documentData.split("$")
+        changedDocumentKeys = new Array()
+        changedDocumentValues = new Array()
+
+        for (let i = 0; i < documentData.length; i++) {
+            if ((i % 2) !== 0) {
+                changedDocumentValues.push(documentData[i])
+            } else {
+                changedDocumentKeys.push(documentData[i])
             }
         }
-        else{
-            alert("Both, Key and Value, must either be empty or defined!")
+
+    } else {
+        //For-Loop starts at 1, because first row only contains <th> Elements
+        for (let i = 1; i < tableRows.length; i++) {
+            //Get every <td> element after apply Button was clicked and sort in keys and values
+            changeKey = tableRows[i].getElementsByTagName("td")[0].innerText
+            changeValue = tableRows[i].getElementsByTagName("td")[1].innerText
+            if (changeKey !== "" && changeValue !== "") {
+                //Handle Embedded Documents
+                if (changeValue.includes("Show Embedded Document")) {
+                    let embeddedDocumentRowId = tableRows[i].getElementsByTagName("th")[0].innerText
+                    changeValue = embeddedDocuments[shownDocumentNumber][embeddedDocumentRowId]
+                    changedDocumentKeys[i - 1] = changeKey
+                    changedDocumentValues[i - 1] = changeValue
+                } else {
+                    changedDocumentKeys[i - 1] = changeKey
+                    changedDocumentValues[i - 1] = changeValue
+                }
+            } else {
+                alert("Both, Key and Value, must either be empty or defined!")
+            }
         }
     }
 }
@@ -485,14 +522,14 @@ function collectMongoDbData() {
  */
 function updateButtonClicked() {
     let updateButton = document.getElementById("update-button")
-    if(updateButton !== null) {
+    if (updateButton !== null) {
         updateButton.addEventListener("click", (event) => {
-                event.preventDefault()
-                sendRequest()
-                //Reset the document to show
-                shownDocumentNumber = 0
-                document.dispatchEvent(changeEvent)
-            }, {once:true})
+            event.preventDefault()
+            sendRequest()
+            //Reset the document to show
+            shownDocumentNumber = 0
+            document.dispatchEvent(changeEvent)
+        }, {once: true})
     }
 }
 
@@ -501,10 +538,38 @@ function updateButtonClicked() {
  */
 function addEntryButtonClicked() {
     let addEntryButton = document.getElementById("add-entry-button")
-    if(addEntryButton !== null) {
+    if (addEntryButton !== null) {
         addEntryButton.addEventListener("click", (event) => {
             event.preventDefault()
             switch (databaseType) {
+                case "sql" :
+                    let rowAmount = document.getElementsByTagName("tr").length
+
+                    let cellAmount = document.getElementsByTagName("tr").item(1).getElementsByTagName("td").length
+
+                    let tableBody = document.getElementById("table-body")
+
+                    let trElement = document.createElement("tr")
+
+                    let thElement = document.createElement("th")
+                    thElement.setAttribute("scope", "row")
+                    thElement.innerText = (rowAmount - 1).toString()
+                    trElement.appendChild(thElement)
+                    trElement.classList.add("user-generated")
+                    for (let i = 0; i < cellAmount; i++) {
+                        let tdElement = document.createElement("td")
+                        if (i !== 0) {
+                            tdElement.setAttribute("contenteditable", "true")
+                        }
+                        trElement.appendChild(tdElement)
+                    }
+                    if (tableBody !== null) {
+                        tableBody.appendChild(trElement)
+                    }
+                    document.dispatchEvent(changeEvent)
+
+                    break;
+
                 case "mongoDb" :
                     //Get rowAmount
                     let rowAmountMongo = document.getElementsByTagName("tr").length
@@ -532,35 +597,7 @@ function addEntryButtonClicked() {
 
                     break;
 
-                case "sql" :
-                    let rowAmount = document.getElementsByTagName("tr").length
-
-                    let cellAmount = document.getElementsByTagName("tr").item(1).getElementsByTagName("td").length
-
-                    let tableBody = document.getElementById("table-body")
-
-                    let trElement = document.createElement("tr")
-
-                    let thElement = document.createElement("th")
-                    thElement.setAttribute("scope", "row")
-                    thElement.innerText = (rowAmount -1).toString()
-                    trElement.appendChild(thElement)
-                    trElement.classList.add("user-generated")
-                    for(let i = 0; i < cellAmount;i++) {
-                        let tdElement = document.createElement("td")
-                        if(i!== 0) {
-                            tdElement.setAttribute("contenteditable", "true")
-                        }
-                        trElement.appendChild(tdElement)
-                    }
-                    if(tableBody !== null) {
-                        tableBody.appendChild(trElement)
-                    }
-                    document.dispatchEvent(changeEvent)
-
-                    break;
-
-                    default:
+                default:
                     //Placeholder for Error-Warning
                     htmlBodyElements.innerHTML = '<div class="alert alert-danger error-warning" role="alert"> \n' +
                         '<h4 class="alert-heading">Error!</h4> \n' +
@@ -576,7 +613,7 @@ function addEntryButtonClicked() {
                     })
                     break;
             }
-        }, {once:true})
+        }, {once: true})
     }
 }
 
@@ -585,7 +622,7 @@ function addEntryButtonClicked() {
  */
 function deleteButtonClicked() {
     let buttonCount = document.getElementsByClassName("delete").length
-    for(let i = 0; i < buttonCount; i++) {
+    for (let i = 0; i < buttonCount; i++) {
         let deleteButton = document.getElementsByClassName("delete")[i]
         deleteButton.addEventListener("click", (event) => {
             event.preventDefault()
@@ -608,9 +645,9 @@ function deleteButtonClicked() {
                     break;
 
                 case "mongoDb":
-                            let trElement = deleteButton.parentElement.parentElement
-                            trElement.remove()
-                            document.dispatchEvent(changeEvent)
+                    let trElement = deleteButton.parentElement.parentElement
+                    trElement.remove()
+                    document.dispatchEvent(changeEvent)
                     break;
 
                 default:
@@ -629,7 +666,7 @@ function deleteButtonClicked() {
                     break;
             }
 
-        }, {once:true})
+        }, {once: true})
     }
 }
 
@@ -641,8 +678,8 @@ function showNextDocumentButtonClicked() {
     if (nextButton !== null) {
         nextButton.addEventListener("click", (event) => {
             event.preventDefault()
-            //If there´s another document -> Increment documentNumber and show next
-            if (shownDocumentNumber < documentCount -1) {
+            //If there is another document increment documentNumber and show next
+            if (shownDocumentNumber < documentCount - 1) {
                 shownDocumentNumber++
                 htmlBodyElements.innerHTML = mongoDbResultHtml[shownDocumentNumber]
                 //Call change event to signalize that html was changed
@@ -650,7 +687,6 @@ function showNextDocumentButtonClicked() {
             }
         })
     }
-
 }
 
 /**
@@ -679,95 +715,43 @@ function showPreviousDocumentButtonClicked() {
  */
 function showAsDocumentButtonClicked() {
     let documentButton = document.getElementById("document-button")
-    if(documentButton !== null) {
+    if (documentButton !== null) {
         documentButton.addEventListener("click", (event) => {
             event.preventDefault()
             let data = '{<br>'
             //Parse keys and values from HTML-Table
             let tableData = document.getElementById("table-body").getElementsByTagName("td")
-
-            for(let i = 0; i < tableData.length; i++) {
+            for (let i = 0; i < tableData.length; i++) {
                 //Ignore delete buttons
-
                 if (!(tableData[i].innerHTML.includes("delete"))) {
                     //Every entry %3 !== 0 is a value, otherwise it´s a key
                     if (i % 3 !== 0) {
-                        if(tableData[i].innerText.includes("Show Embedded Document")) {
+                        if (tableData[i].innerText.includes("Show Embedded Document")) {
                             let rowNumber = parseInt(tableData[i].parentElement.getElementsByTagName("th")[0].innerText)
                             data = data + embeddedDocuments[shownDocumentNumber][rowNumber].toString()
-                        }
-                        else {
+                        } else {
                             data = data + tableData[i].innerText
                         }
                         //Add a comma after every value except the last two (Delete-Button and last Entry)
                         if (i < (tableData.length - 2)) {
                             data = data + ',<br>'
                         }
-                    }
-                    else {
+                    } else {
                         data = data + tableData[i].innerText + ':'
                     }
                 }
             }
             data = data + '<br>}'
 
-            let newInnerHtml ='<div id="table-element" class="formatted document-table"> \n' +
+            let newInnerHtml = '<div id="table-element" class="formatted document-table"> \n' +
                 '<table class="table table-striped table-dark"> \n' +
                 '<td contenteditable="true">' + data + '</td>' + '</table> \n' + '</div> \n' +
                 '<div class="formatted"> \n' +
-                '<button class="btn btn-dark btn-block" id="save-button" role ="button">Save</button> \n' +
+                '<button class="btn btn-dark btn-block" id="apply-changes-button" role ="button">Apply Changes</button> \n' +
                 '</div> \n';
             htmlBodyElements.innerHTML = newInnerHtml
             document.dispatchEvent(changeEvent)
-        }, {once:true})}
-}
-
-/**
- * This function listens to the "Save" Button, that is shown after the "Show as Document" Button was clicked.
- * It collects the keys and values of the document and sends a request to the QueryServlet to apply the changes
- */
-function saveButtonClicked() {
-    let saveButton = document.getElementById("save-button")
-    if(saveButton !== null) {
-        saveButton.addEventListener("click", (event) => {
-            event.preventDefault()
-
-            let documentData = document.getElementsByTagName("td")[0].innerHTML.replaceAll("<br>", "$").replaceAll(":","$").replaceAll(",$","$")
-            //Remove first and last {,},$
-            documentData = documentData.substring(2, documentData.length -2)
-            documentData = documentData.split("$")
-            let keyString = ""
-            let valueString = ""
-
-            for(let i = 0; i < documentData.length;i++) {
-                if((i % 2) !== 0) {
-                    valueString = valueString + documentData[i] + "$"
-                }
-                else {
-                    keyString = keyString + documentData[i] + "$"
-                }
-            }
-            //Remove last $
-            valueString = valueString.substring(0,valueString.length -1)
-            keyString = keyString.substring(0, keyString.length -1)
-
-            let asyncRequest = new XMLHttpRequest();
-            asyncRequest.open('POST', './QueryServlet', true);
-            let payload = "edit mongo$" + "keys$" + keyString + "$values$" + valueString
-            asyncRequest.send(payload)
-
-            asyncRequest.addEventListener("readystatechange", (event) => {
-                if (asyncRequest.readyState === 4 && asyncRequest.status === 200) {
-                    if (htmlBodyElements !== null) {
-                        documentCount = parseInt(asyncRequest.responseText.split("$")[1])
-                        mongoDbResultHtml = new Array(parseInt(documentCount))
-                        mongoDbResultHtml = writeMongoDbResults(asyncRequest)
-                    }
-                }
-                htmlBodyElements.innerHTML = mongoDbResultHtml[shownDocumentNumber]
-                document.dispatchEvent(changeEvent)
-            })
-        }, {once:true})
+        }, {once: true})
     }
 }
 
@@ -777,7 +761,7 @@ function saveButtonClicked() {
  */
 function showEmbeddedDocumentButtonClicked() {
     let showEmbeddedDocumentButtons = document.getElementsByClassName("show-embedded-document")
-    for(let i = 0; i < showEmbeddedDocumentButtons.length;i++) {
+    for (let i = 0; i < showEmbeddedDocumentButtons.length; i++) {
         let showEmbeddedDocumentButton = document.getElementsByClassName("show-embedded-document")[i]
         showEmbeddedDocumentButton.addEventListener("click", (event) => {
             event.preventDefault()
@@ -807,12 +791,12 @@ function showEmbeddedDocumentButtonClicked() {
                     '<td contenteditable="true">' + values[j] + '</td> \n' + '</tr> \n';
             }
             innerHtml = innerHtml + '</tbody> \n' + '</table> \n' + '</div> \n';
-            if(document.getElementsByClassName("embedded-document-table").length !== 0) {
+            if (document.getElementsByClassName("embedded-document-table").length !== 0) {
                 let oldTable = document.getElementsByClassName("embedded-document-table")[0]
                 oldTable.remove()
-        }
+            }
             document.getElementById("body-elements").innerHTML = document.getElementById("body-elements").innerHTML + innerHtml
             document.dispatchEvent(changeEvent)
-        }, {once:true})
+        }, {once: true})
     }
 }

@@ -1,4 +1,10 @@
+/**
+ * Author: Corvin Tank
+ * Bachelor Thesis "REALIZATION OF AN INTEGRATIVE DATABASE FRAMEWORK WITH GENERIC OPERATING INTERFACE AS EXAMPLE OF AN INVENTORY DATABASE"
+ */
+
 package greta.dev.databaseFrameworkApp;
+
 import java.sql.*;
 
 public interface MySqlConnect {
@@ -12,11 +18,11 @@ public interface MySqlConnect {
      * @throws SQLException
      * @author Corvin Tank
      */
-    Connection connectToMysql(String host, String database, String user, String password) throws SQLException;
+    Connection connectToMySql(String host, String database, String user, String password) throws SQLException;
 
     /**
-     * @param connection        The connection to the database provided by the method connectToMysql
-     * @param command           The SQL-Statement to execute
+     * @param connection The connection to the database provided by the method connectToMysql
+     * @param command    The SQL-Statement to execute
      * @return return the resultSet of the SQL-Command
      * @throws SQLException
      * @author Corvin Tank
