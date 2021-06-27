@@ -271,12 +271,12 @@ function applyButtonClicked() {
                         '<button class="btn btn-dark btn-block" id="apply-button-no" role ="button">No, discard changes</button> \n' +
                         '</p> \n' + '</div> \n';
 
-                    document.getElementById("add-button").remove()
-                    document.getElementById("apply").remove()
-                    document.getElementById("update").remove()
-                    document.getElementById("as-document-button").remove()
-                    document.getElementById("document-counter").remove()
-                    document.getElementById("navigation-buttons").remove()
+                    if(document.getElementById("add-button")!== null) {document.getElementById("add-button").remove() }
+                    if(document.getElementById("apply-changes-button")!== null) {document.getElementById("apply-changes-button").remove() }
+                    if(document.getElementById("update-button")!== null) {document.getElementById("update-button").remove() }
+                    if(document.getElementById("as-document-button")!== null) {document.getElementById("as-document-button").remove() }
+                    if(document.getElementById("document-counter")!== null) {document.getElementById("document-counter").remove() }
+                    if(document.getElementById("navigation-buttons")!== null) {document.getElementById("navigation-buttons").remove() }
 
 
                     warningYesButtonClicked()
