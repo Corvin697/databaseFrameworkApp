@@ -101,7 +101,7 @@ function sendRequest() {
                         errorOkButton.addEventListener("click", () => {
                             event.preventDefault()
                             document.dispatchEvent(changeEvent)
-                            //Reload query.html
+                            //Reload index.html
                             location.reload()
                         })
                 }
@@ -316,7 +316,7 @@ function applyButtonClicked() {
                     errorOkButton.addEventListener("click", () => {
                         event.preventDefault()
                         document.dispatchEvent(changeEvent)
-                        //Reload query.html
+                        //Reload index.html
                         location.reload()
                     })
                     break;
@@ -398,7 +398,7 @@ function warningYesButtonClicked() {
                 errorOkButton.addEventListener("click", () => {
                     event.preventDefault()
                     document.dispatchEvent(changeEvent)
-                    //Reload query.html
+                    //Reload index.html
                     location.reload()
                 })
                 break;
@@ -434,7 +434,7 @@ function warningNoButtonClicked() {
                 errorOkButton.addEventListener("click", () => {
                     event.preventDefault()
                     document.dispatchEvent(changeEvent)
-                    //Reload query.html
+                    //Reload index.html
                     location.reload()
                 })
                 break;
@@ -608,7 +608,7 @@ function addEntryButtonClicked() {
                     errorOkButton.addEventListener("click", () => {
                         event.preventDefault()
                         document.dispatchEvent(changeEvent)
-                        //Reload query.html
+                        //Reload index.html
                         location.reload()
                     })
                     break;
@@ -660,7 +660,7 @@ function deleteButtonClicked() {
                     errorOkButton.addEventListener("click", () => {
                         event.preventDefault()
                         document.dispatchEvent(changeEvent)
-                        //Reload query.html
+                        //Reload index.html
                         location.reload()
                     })
                     break;

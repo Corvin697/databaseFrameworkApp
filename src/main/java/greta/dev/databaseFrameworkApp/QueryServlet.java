@@ -198,7 +198,7 @@ public class QueryServlet extends HttpServlet implements MongoDbConnect, MySqlCo
                                 values = values + "''";
                             }
                         }
-                        String statement = "INSERT INTO products(" + columnNames + ") VALUES(" + values + ")";
+                        String statement = "INSERT INTO inventory(" + columnNames + ") VALUES(" + values + ")";
                         System.out.println(statement);
                         resultSet = getResultSet(connection, statement);
                         writeSql(resultSet, response);
@@ -212,7 +212,7 @@ public class QueryServlet extends HttpServlet implements MongoDbConnect, MySqlCo
                 try {
                     connection = connectToMySql(mySqlHostName, mySqlDatabaseName, user, password);
 
-                    String statement = "DELETE FROM products WHERE product_id =" + payload.split(",")[1];
+                    String statement = "DELETE FROM inventory WHERE id =" + payload.split(",")[1];
                     System.out.println(statement);
                     resultSet = getResultSet(connection, statement);
                     writeSql(resultSet, response);

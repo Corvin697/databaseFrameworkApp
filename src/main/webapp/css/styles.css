@@ -14,7 +14,7 @@ html {
 
 body {
     font-family: 'Dosis', sans-serif;
-    background: linear-gradient(to left, #ff5e7c, #c272d4, #718ced, #02aab0, #00cdac);
+    background: radial-gradient(ellipse at center, #1e5799 0%,#2989d8 59%,#7db9e8 100%);
 }
 
 h1, h2, h3, h4, h5, h6 {
